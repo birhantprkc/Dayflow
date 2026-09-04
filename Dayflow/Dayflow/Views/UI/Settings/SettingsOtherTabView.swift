@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsOtherTabView: View {
   @ObservedObject var viewModel: OtherSettingsViewModel
   @ObservedObject var launchAtLoginManager: LaunchAtLoginManager
+  @AppStorage(DayflowAppearance.storageKey) private var appearance: DayflowAppearance = .system
   @FocusState private var isOutputLanguageFocused: Bool
 
   var body: some View {
@@ -20,6 +21,24 @@ struct SettingsOtherTabView: View {
       subtitle: "General toggles and telemetry settings."
     ) {
       VStack(alignment: .leading, spacing: 0) {
+        SettingsRow(
+          label: "Light/Dark mode",
+          subtitle: "Follow the system setting or pick light or dark."
+        ) {
+          Picker("", selection: $appearance) {
+            ForEach(DayflowAppearance.allCases) { option in
+              Text(option.title).tag(option)
+            }
+          }
+          .pickerStyle(.segmented)
+          .labelsHidden()
+          .frame(width: 210)
+          .onChange(of: appearance) { _, newValue in
+            AnalyticsService.shared.capture(
+              "appearance_changed", ["appearance": newValue.rawValue])
+          }
+        }
+
         SettingsRow(
           label: "Launch Dayflow at login",
           subtitle:
