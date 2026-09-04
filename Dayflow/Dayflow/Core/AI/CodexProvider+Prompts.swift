@@ -1,7 +1,11 @@
 import AppKit
 import Foundation
 
-extension CodexProvider {
+protocol ChatGPTTimelinePromptSupporting: TimelineOutputSupporting {}
+
+extension CodexProvider: ChatGPTTimelinePromptSupporting {}
+
+extension ChatGPTTimelinePromptSupporting {
   // MARK: - Codex prompt builders
 
   func buildCardsPrompt(
@@ -177,11 +181,12 @@ extension CodexProvider {
   }
 
   func buildScreenshotTranscriptionPrompt(
-    numFrames: Int, duration: String, startTime: String, endTime: String
+    numFrames: Int, duration: String, startTime: String, endTime: String,
+    frameTiming: String = "They are 1 min apart and in order."
   ) -> String {
     return """
       Analyze these \(numFrames) screenshots from a \(duration) screen recording
-      (\(startTime) to \(endTime)). They are 1 min apart and in order.
+      (\(startTime) to \(endTime)). \(frameTiming)
 
       Create an activity log detailed enough that someone could reconstruct what
       the user did.
