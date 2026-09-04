@@ -21,7 +21,7 @@ private final class AgentCLIStreamingDebugSink: @unchecked Sendable {
   }
 }
 
-protocol AgentCLISupporting: AnyObject {
+protocol AgentCLISupporting: AnyObject, TimelineOutputSupporting {
   var providerID: LLMProviderID { get }
   var cliTool: ChatCLITool { get }
   var runner: ChatCLIProcessRunner { get }
