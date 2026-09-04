@@ -76,20 +76,25 @@ struct HowItWorksView: View {
           content: { Text("Back").font(.custom("Figtree", size: 14)).fontWeight(.semibold) },
           background: .white,
           foreground: Color(red: 0.25, green: 0.17, blue: 0),
-          borderColor: .clear,
-          cornerRadius: 8,
-          horizontalPadding: 20,
-          verticalPadding: 12,
+          borderColor: Color(hex: "B6B6B6"),
+          cornerRadius: 200,
+          horizontalPadding: 32,
+          verticalPadding: 0,
           minWidth: 120,
-          isSecondaryStyle: true
+          fixedHeight: 44,
+          showShadow: false
         )
 
         Spacer()
 
         DayflowSurfaceButton(
           action: {
-            if let url = URL(string: "https://github.com/jerryzliu/Dayflow") {
-              NSWorkspace.shared.open(url)
+            GitHubStarPromptState.markShown()
+            Task {
+              let starred = await GitHubStarService.starDayflow()
+              if !starred {
+                NSWorkspace.shared.open(GitHubStarPromptState.repositoryURL)
+              }
             }
           },
           content: {
@@ -100,28 +105,37 @@ struct HowItWorksView: View {
               Text("Star Dayflow on GitHub").font(.custom("Figtree", size: 14)).fontWeight(.medium)
             }
           },
-          background: Color(red: 0.25, green: 0.17, blue: 0),
+          background: Color(hex: "FF9F6F"),
           foreground: .white,
-          borderColor: .clear,
-          cornerRadius: 8,
+          borderColor: Color(hex: "F4C8B1"),
+          cornerRadius: 200,
           horizontalPadding: 24,
           verticalPadding: 12,
-          showOverlayStroke: true
+          showOverlayStroke: false,
+          innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
         )
 
         Spacer()
 
         DayflowSurfaceButton(
           action: onNext,
-          content: { Text("Next").font(.custom("Figtree", size: 14)).fontWeight(.semibold) },
-          background: Color(red: 0.25, green: 0.17, blue: 0),
+          content: {
+            HStack(spacing: 6) {
+              Text("Next").font(.custom("Figtree", size: 14)).fontWeight(.semibold)
+              Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
+            }
+            .padding(.leading, 4)
+          },
+          background: Color(hex: "FF9F6F"),
           foreground: .white,
-          borderColor: .clear,
-          cornerRadius: 8,
-          horizontalPadding: 20,
-          verticalPadding: 12,
+          borderColor: Color(hex: "F4C8B1"),
+          cornerRadius: 200,
+          horizontalPadding: 32,
+          verticalPadding: 0,
           minWidth: 120,
-          showOverlayStroke: true
+          fixedHeight: 44,
+          showOverlayStroke: false,
+          innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
         )
       }
       .frame(maxWidth: 600)  // Match card width
