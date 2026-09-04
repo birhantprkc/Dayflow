@@ -12,6 +12,11 @@ extension OllamaProvider {
     var temperature: Double = 0.7
     var max_tokens: Int = 4000
     var stream: Bool = false
+    var reasoning: Reasoning? = nil
+
+    struct Reasoning: Codable {
+      let effort: String
+    }
   }
 
   struct ChatMessage: Codable {
