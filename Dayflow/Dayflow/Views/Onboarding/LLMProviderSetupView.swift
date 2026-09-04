@@ -5,10 +5,18 @@ import SwiftUI
 struct LLMProviderSetupView: View {
   let providerType: LLMProviderID
   let onBack: () -> Void
-  let onComplete: () -> Bool
+  /// Called with the provider that was actually configured — this can differ from
+  /// `providerType` when the user switches CLI tools on the detection step.
+  let onComplete: (LLMProviderID) -> Bool
+
+  /// The provider currently being configured. Starts as `providerType` but follows
+  /// the user's CLI tool selection (ChatGPT ↔ Claude) during setup.
+  var effectiveProviderType: LLMProviderID {
+    setupState.configuredProviderID ?? providerType
+  }
 
   var headerTitle: String {
-    switch providerType {
+    switch effectiveProviderType {
     case .local:
       return "Use local AI"
     case .chatGPT:
@@ -24,9 +32,10 @@ struct LLMProviderSetupView: View {
     }
   }
 
-  // Layout constants
-  let sidebarWidth: CGFloat = 250
-  let fixedOffset: CGFloat = 50
+  // Layout constants (Figma "Edits after first implementation" LLM1–LLM4)
+  let sidebarWidth: CGFloat = 190
+  let fixedOffset: CGFloat = 42
+  let contentGap: CGFloat = 76
 
   @StateObject var setupState = ProviderSetupState()
   @State var sidebarOpacity: Double = 0
@@ -35,25 +44,24 @@ struct LLMProviderSetupView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       // Header with Back button and Title on same line
-      HStack(alignment: .center, spacing: 0) {
+      HStack(alignment: .center, spacing: contentGap) {
         // Back button container matching sidebar width
         HStack {
           Button(action: handleBack) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
               Image(systemName: "chevron.left")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.black.opacity(0.7))
-                .frame(width: 20, alignment: .center)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(Color(hex: "634342"))
+                .frame(width: 20, height: 20, alignment: .center)
 
               Text("Back")
-                .font(.custom("Figtree", size: 15))
+                .font(.custom("Figtree", size: 16))
                 .fontWeight(.medium)
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(Color(hex: "634342"))
             }
           }
           .buttonStyle(DayflowPressScaleButtonStyle(pressedScale: 0.97))
-          // Position where sidebar items start: 20 + 16 = 36px
-          .padding(.leading, 36)  // Align with sidebar item structure
+          .padding(.leading, 7)
           .pointingHandCursor()
 
           Spacer()
@@ -63,20 +71,19 @@ struct LLMProviderSetupView: View {
         // Title in the content area
         HStack {
           Text(headerTitle)
-            .font(.custom("Figtree", size: 32))
+            .font(.custom("Figtree", size: 28))
             .fontWeight(.semibold)
-            .foregroundColor(.black.opacity(0.9))
+            .foregroundColor(Color(hex: "333333"))
 
           Spacer()
         }
-        .padding(.leading, 40)  // Gap between sidebar and content
       }
       .padding(.leading, fixedOffset)
-      .padding(.top, fixedOffset / 2)
-      .padding(.bottom, 20)
+      .padding(.top, 30)
+      .padding(.bottom, 24)
 
       // Main content area with sidebar and content
-      HStack(alignment: .top, spacing: 40) {
+      HStack(alignment: .top, spacing: contentGap) {
         // Sidebar - fixed width 250px
         VStack(alignment: .leading, spacing: 0) {
           SetupSidebarView(
@@ -92,7 +99,7 @@ struct LLMProviderSetupView: View {
         // Content area - wrapped in VStack to match sidebar alignment
         VStack(alignment: .leading, spacing: 0) {
           currentStepContent
-            .frame(maxWidth: 500, alignment: .leading)
+            .frame(maxWidth: 638, alignment: .leading)
           Spacer()
         }
         .opacity(contentOpacity)
@@ -103,6 +110,13 @@ struct LLMProviderSetupView: View {
       Spacer()  // Push everything to top
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
+    // Next / Complete setup always pinned to the bottom-right corner
+    .overlay(alignment: .bottomTrailing) {
+      nextButton
+        .padding(.trailing, 40)
+        .padding(.bottom, 38)
+        .opacity(contentOpacity)
+    }
     .onAppear {
       setupState.configureSteps(for: providerType)
       animateAppearance()
@@ -142,37 +156,39 @@ struct LLMProviderSetupView: View {
       DayflowSurfaceButton(
         action: completeSetup,
         content: {
-          HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill").font(.system(size: 14))
-            Text("Complete Setup").font(.custom("Figtree", size: 14)).fontWeight(.semibold)
-          }
+          Text("Complete setup").font(.custom("Figtree", size: 16)).fontWeight(.medium)
         },
-        background: Color(red: 0.25, green: 0.17, blue: 0),
+        background: Color(hex: "FF9F6F"),
         foreground: .white,
-        borderColor: .clear,
-        cornerRadius: 8,
-        horizontalPadding: 24,
-        verticalPadding: 12,
-        showOverlayStroke: true
+        borderColor: Color(hex: "F4C8B1"),
+        cornerRadius: 200,
+        horizontalPadding: 40,
+        verticalPadding: 16,
+        showOverlayStroke: false,
+        innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
       )
     } else {
       DayflowSurfaceButton(
         action: handleContinue,
         content: {
-          HStack(spacing: 6) {
-            Text(nextButtonText).font(.custom("Figtree", size: 14)).fontWeight(.semibold)
+          HStack(spacing: 4) {
+            Text(nextButtonText).font(.custom("Figtree", size: 16)).fontWeight(.medium)
             if nextButtonText == "Next" {
-              Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
+              Image(systemName: "chevron.right")
+                .font(.system(size: 15, weight: .medium))
+                .frame(width: 20, height: 20)
             }
           }
+          .padding(.leading, 6)
         },
-        background: Color(red: 0.25, green: 0.17, blue: 0),
+        background: Color(hex: "FF9F6F"),
         foreground: .white,
-        borderColor: .clear,
-        cornerRadius: 8,
-        horizontalPadding: 24,
-        verticalPadding: 12,
-        showOverlayStroke: true
+        borderColor: Color(hex: "F4C8B1"),
+        cornerRadius: 200,
+        horizontalPadding: 40,
+        verticalPadding: 16,
+        showOverlayStroke: false,
+        innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
       )
       .disabled(!setupState.canContinue)
       .opacity(!setupState.canContinue ? 0.5 : 1.0)
@@ -190,12 +206,12 @@ struct LLMProviderSetupView: View {
           Text("Choose your local AI engine")
             .font(.custom("Figtree", size: 24))
             .fontWeight(.semibold)
-            .foregroundColor(.black.opacity(0.9))
+            .foregroundColor(Color(hex: "333333"))
           Text(
             "For local use, LM Studio is the most reliable; Ollama has a known thinking bug in onboarding (can't turn thinking off) and performance is unreliable."
           )
           .font(.custom("Figtree", size: 14))
-          .foregroundColor(.black.opacity(0.6))
+          .foregroundColor(Color(hex: "333333"))
         }
         HStack(alignment: .center, spacing: 12) {
           DayflowSurfaceButton(
@@ -224,33 +240,30 @@ struct LLMProviderSetupView: View {
                 .font(.custom("Figtree", size: 14))
                 .fontWeight(.semibold)
             },
-            background: Color(red: 0.25, green: 0.17, blue: 0),
+            background: Color(hex: "FF9F6F"),
             foreground: .white,
-            borderColor: .clear,
-            cornerRadius: 8,
-            showOverlayStroke: true
+            borderColor: Color(hex: "F4C8B1"),
+            cornerRadius: 200,
+            showOverlayStroke: false,
+            innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
           )
         }
         Text(
           "Already have a local server? Make sure it’s OpenAI-compatible. You can set a custom base URL in the next step."
         )
         .font(.custom("Figtree", size: 13))
-        .foregroundColor(.black.opacity(0.6))
-        HStack {
-          Spacer()
-          nextButton
-        }
+        .foregroundColor(Color(hex: "333333"))
       }
     case .localModelInstall:
       VStack(alignment: .leading, spacing: 16) {
         Text("Install Qwen3-VL 4B")
           .font(.custom("Figtree", size: 24))
           .fontWeight(.semibold)
-          .foregroundColor(.black.opacity(0.9))
+          .foregroundColor(Color(hex: "333333"))
         if setupState.localEngine == .ollama {
           Text("After installing Ollama, run this in your terminal to download the model (≈5GB):")
             .font(.custom("Figtree", size: 14))
-            .foregroundColor(.black.opacity(0.6))
+            .foregroundColor(Color(hex: "333333"))
           TerminalCommandView(
             title: "Run this command:",
             subtitle: "Downloads Qwen3 Vision 4B for Ollama",
@@ -260,7 +273,7 @@ struct LLMProviderSetupView: View {
           VStack(alignment: .leading, spacing: 16) {
             Text("After installing LM Studio, download the recommended model:")
               .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.6))
+              .foregroundColor(Color(hex: "333333"))
 
             DayflowSurfaceButton(
               action: openLMStudioModelDownload,
@@ -271,25 +284,26 @@ struct LLMProviderSetupView: View {
                     .fontWeight(.semibold)
                 }
               },
-              background: Color(red: 0.25, green: 0.17, blue: 0),
+              background: Color(hex: "FF9F6F"),
               foreground: .white,
-              borderColor: .clear,
-              cornerRadius: 8,
+              borderColor: Color(hex: "F4C8B1"),
+              cornerRadius: 200,
               horizontalPadding: 24,
               verticalPadding: 12,
-              showOverlayStroke: true
+              showOverlayStroke: false,
+              innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
             )
 
             VStack(alignment: .leading, spacing: 6) {
               Text("This will open LM Studio and prompt you to download the model (≈3GB).")
                 .font(.custom("Figtree", size: 13))
-                .foregroundColor(.black.opacity(0.65))
+                .foregroundColor(Color(hex: "333333"))
 
               Text(
                 "Once downloaded, turn on 'Local Server' in LM Studio (default http://localhost:1234)"
               )
               .font(.custom("Figtree", size: 13))
-              .foregroundColor(.black.opacity(0.65))
+              .foregroundColor(Color(hex: "333333"))
             }
             .padding(.top, 4)
 
@@ -298,13 +312,13 @@ struct LLMProviderSetupView: View {
               Text("Manual setup:")
                 .font(.custom("Figtree", size: 12))
                 .fontWeight(.semibold)
-                .foregroundColor(.black.opacity(0.5))
+                .foregroundColor(Color(hex: "727272"))
               Text("1. Open LM Studio → Models tab")
                 .font(.custom("Figtree", size: 12))
-                .foregroundColor(.black.opacity(0.45))
+                .foregroundColor(Color(hex: "727272"))
               Text("2. Search for 'Qwen3-VL-4B' and install the Instruct variant")
                 .font(.custom("Figtree", size: 12))
-                .foregroundColor(.black.opacity(0.45))
+                .foregroundColor(Color(hex: "727272"))
             }
             .padding(.top, 8)
           }
@@ -313,17 +327,13 @@ struct LLMProviderSetupView: View {
             Text("Use any OpenAI-compatible VLM")
               .font(.custom("Figtree", size: 16))
               .fontWeight(.semibold)
-              .foregroundColor(.black.opacity(0.85))
+              .foregroundColor(Color(hex: "333333"))
             Text(
               "Make sure your server exposes the OpenAI Chat Completions API and has Qwen3-VL 4B (or Qwen2.5-VL 3B if you need the legacy model) installed."
             )
             .font(.custom("Figtree", size: 14))
-            .foregroundColor(.black.opacity(0.75))
+            .foregroundColor(Color(hex: "333333"))
           }
-        }
-        HStack {
-          Spacer()
-          nextButton
         }
       }
     case .terminalCommand(let command):
@@ -334,10 +344,6 @@ struct LLMProviderSetupView: View {
           command: command
         )
 
-        HStack {
-          Spacer()
-          nextButton
-        }
       }
 
     case .apiKeyInput:
@@ -385,7 +391,7 @@ struct LLMProviderSetupView: View {
           )
           .font(.custom("Figtree", size: 16))
           .fontWeight(.semibold)
-          .foregroundColor(.black.opacity(0.85))
+          .foregroundColor(Color(hex: "333333"))
 
           Picker("Gemini model", selection: $setupState.geminiModel) {
             ForEach(GeminiModel.allCases, id: \.self) { model in
@@ -396,16 +402,12 @@ struct LLMProviderSetupView: View {
 
           Text(GeminiModelPreference(primary: setupState.geminiModel).fallbackSummary)
             .font(.custom("Figtree", size: 13))
-            .foregroundColor(.black.opacity(0.55))
+            .foregroundColor(Color(hex: "727272"))
         }
         .onChange(of: setupState.geminiModel) {
           setupState.persistGeminiModelSelection(source: "onboarding_picker")
         }
 
-        HStack {
-          Spacer()
-          nextButton
-        }
       }
 
     case .modelDownload(let command):
@@ -414,11 +416,11 @@ struct LLMProviderSetupView: View {
           Text("Download the AI model")
             .font(.custom("Figtree", size: 24))
             .fontWeight(.semibold)
-            .foregroundColor(.black.opacity(0.9))
+            .foregroundColor(Color(hex: "333333"))
 
           Text("This model enables Dayflow to understand what's on your screen")
             .font(.custom("Figtree", size: 14))
-            .foregroundColor(.black.opacity(0.6))
+            .foregroundColor(Color(hex: "333333"))
         }
 
         TerminalCommandView(
@@ -428,36 +430,36 @@ struct LLMProviderSetupView: View {
           command: command
         )
 
-        HStack {
-          Spacer()
-          nextButton
-        }
       }
 
     case .information(let title, let description):
       VStack(alignment: .leading, spacing: 24) {
-        VStack(alignment: .leading, spacing: 16) {
-          Text(title)
-            .font(.custom("Figtree", size: 24))
-            .fontWeight(.semibold)
-            .foregroundColor(.black.opacity(0.9))
+        VStack(alignment: .leading, spacing: 12) {
+          if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            Text(title)
+              .font(.custom("Figtree", size: 24))
+              .fontWeight(.semibold)
+              .foregroundColor(Color(hex: "333333"))
+          }
           if !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             Text(description)
-              .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.6))
+              .font(.custom("Figtree", size: 16))
+              .foregroundColor(Color(hex: "333333"))
               .fixedSize(horizontal: false, vertical: true)
               .multilineTextAlignment(.leading)
               .lineLimit(nil)
+              .frame(maxWidth: 500, alignment: .leading)
             // Additional guidance for the local intro step only
             if step.id == "intro" && providerType == .local {
               (Text("Advanced users can pick any ") + Text("vision-capable").fontWeight(.bold)
                 + Text(
                   " LLM, but we strongly recommend using Qwen3-VL 4B based on our internal benchmarks."
                 ))
-                .font(.custom("Figtree", size: 14))
-                .foregroundColor(.black.opacity(0.6))
+                .font(.custom("Figtree", size: 16))
+                .foregroundColor(Color(hex: "333333"))
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
+                .frame(maxWidth: 500, alignment: .leading)
             }
           }
         }
@@ -481,7 +483,8 @@ struct LLMProviderSetupView: View {
                   onTestComplete: { success in
                     setupState.hasTestedConnection = true
                     setupState.testSuccessful = success
-                  }
+                  },
+                  usesOnboardingStyle: true
                 )
               } else if providerType == .openAICompatible {
                 VStack(alignment: .leading, spacing: 12) {
@@ -535,7 +538,7 @@ struct LLMProviderSetupView: View {
                 VStack(alignment: .leading, spacing: 12) {
                   Text("Which tool are you using?")
                     .font(.custom("Figtree", size: 14))
-                    .foregroundColor(.black.opacity(0.65))
+                    .foregroundColor(Color(hex: "333333"))
                   Picker("Engine", selection: $setupState.localEngine) {
                     Text("LM Studio").tag(LocalEngine.lmstudio)
                     Text("Custom model").tag(LocalEngine.custom)
@@ -578,10 +581,6 @@ struct LLMProviderSetupView: View {
         }
         .frame(maxHeight: 420)
 
-        HStack {
-          Spacer()
-          nextButton
-        }
       }
 
     case .cliDetection:
@@ -594,8 +593,7 @@ struct LLMProviderSetupView: View {
         onRetry: { setupState.refreshCLIStatuses() },
         onInstall: { tool in openChatCLIInstallPage(for: tool) },
         selectedTool: setupState.preferredCLITool,
-        onSelectTool: { tool in setupState.selectPreferredCLITool(tool) },
-        nextButton: { nextButton }
+        onSelectTool: { tool in setupState.selectPreferredCLITool(tool) }
       )
       .onAppear {
         setupState.ensureCLICheckStarted()
@@ -607,26 +605,26 @@ struct LLMProviderSetupView: View {
           Text("Get your Gemini API key")
             .font(.custom("Figtree", size: 24))
             .fontWeight(.semibold)
-            .foregroundColor(.black.opacity(0.9))
+            .foregroundColor(Color(hex: "333333"))
 
           Text(
             "allows you to run Dayflow for free. All you need is a Google account - no credit card required."
           )
           .font(.custom("Figtree", size: 14))
-          .foregroundColor(.black.opacity(0.6))
+          .foregroundColor(Color(hex: "333333"))
         }
 
         VStack(alignment: .leading, spacing: 16) {
           HStack(alignment: .top, spacing: 12) {
             Text("1.")
               .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.6))
+              .foregroundColor(Color(hex: "333333"))
               .frame(width: 20, alignment: .leading)
 
             Button(action: openGoogleAIStudio) {
               Text("Visit Google AI Studio ")
                 .font(.custom("Figtree", size: 14))
-                .foregroundColor(.black.opacity(0.8))
+                .foregroundColor(Color(hex: "333333"))
                 + Text("(aistudio.google.com)")
                 .font(.custom("Figtree", size: 14))
                 .foregroundColor(Color(red: 1, green: 0.42, blue: 0.02))
@@ -639,28 +637,27 @@ struct LLMProviderSetupView: View {
           HStack(alignment: .top, spacing: 12) {
             Text("2.")
               .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.6))
+              .foregroundColor(Color(hex: "333333"))
               .frame(width: 20, alignment: .leading)
 
             Text("Click \"Create API key\" in the top right")
               .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.8))
+              .foregroundColor(Color(hex: "333333"))
           }
 
           HStack(alignment: .top, spacing: 12) {
             Text("3.")
               .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.6))
+              .foregroundColor(Color(hex: "333333"))
               .frame(width: 20, alignment: .leading)
 
             Text("Create a new API key and copy it")
               .font(.custom("Figtree", size: 14))
-              .foregroundColor(.black.opacity(0.8))
+              .foregroundColor(Color(hex: "333333"))
           }
         }
         .padding(.vertical, 12)
 
-        // Buttons row with Open Google AI Studio on left, Next on right
         HStack {
           DayflowSurfaceButton(
             action: openGoogleAIStudio,
@@ -671,16 +668,16 @@ struct LLMProviderSetupView: View {
                   .semibold)
               }
             },
-            background: Color(red: 0.25, green: 0.17, blue: 0),
+            background: Color(hex: "FF9F6F"),
             foreground: .white,
-            borderColor: .clear,
-            cornerRadius: 8,
+            borderColor: Color(hex: "F4C8B1"),
+            cornerRadius: 200,
             horizontalPadding: 24,
             verticalPadding: 12,
-            showOverlayStroke: true
+            showOverlayStroke: false,
+            innerGlowColor: Color(hex: "FFDCCB").opacity(0.9)
           )
           Spacer()
-          nextButton
         }
       }
     }
@@ -740,7 +737,7 @@ struct LLMProviderSetupView: View {
     }
 
     do {
-      try LLMProviderSetupPreferences.markComplete(providerType)
+      try LLMProviderSetupPreferences.markComplete(effectiveProviderType)
       return true
     } catch {
       setupState.saveErrorMessage =
@@ -751,7 +748,7 @@ struct LLMProviderSetupView: View {
 
   func completeSetup() {
     guard saveConfiguration() else { return }
-    guard onComplete() else {
+    guard onComplete(effectiveProviderType) else {
       setupState.saveErrorMessage =
         "The provider is configured, but Dayflow couldn't update your routing. Your previous selection is still active."
       return
