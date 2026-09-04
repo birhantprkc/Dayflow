@@ -170,7 +170,7 @@ final class LLMService: LLMServicing {
     return saved.isEmpty ? "http://localhost:11434" : saved
   }
 
-  private func makeOpenAICompatibleProvider() -> OllamaProvider? {
+  private func makeOpenAICompatibleProvider() -> OpenAICompatibleProvider? {
     guard let configuration = OpenAICompatiblePreferences.load(), configuration.isComplete else {
       print("❌ [LLMService] OpenAI-compatible provider unavailable: incomplete configuration")
       return nil
@@ -180,7 +180,7 @@ final class LLMService: LLMServicing {
       configuration: configuration,
       bearerToken: apiKey
     )
-    return OllamaProvider(openAICompatible: runtimeConfiguration)
+    return OpenAICompatibleProvider(configuration: runtimeConfiguration)
   }
 
   private func providerLabel(for providerID: LLMProviderID) -> String {
