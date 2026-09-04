@@ -75,17 +75,31 @@ final class ProvidersSettingsViewModelTests: XCTestCase {
   }
 
   func testGeminiModelPreferenceUsesTheNewFallbackChain() {
+    XCTAssertEqual(GeminiModel.flash38.rawValue, "gemini-3.8-flash")
+    XCTAssertEqual(GeminiModel.flash37.rawValue, "gemini-3.7-flash")
+    XCTAssertEqual(
+      GeminiModelPreference(primary: .flash37).orderedModels,
+      [.flash37, .flash36, .flash35, .flashLite35]
+    )
     XCTAssertEqual(GeminiModel.flash36.rawValue, "gemini-3.6-flash")
     XCTAssertEqual(GeminiModel.flash35.rawValue, "gemini-3.5-flash")
     XCTAssertEqual(GeminiModel.flashLite35.rawValue, "gemini-3.5-flash-lite")
     XCTAssertEqual(
       GeminiModelPreference.default.orderedModels,
-      [.flash36, .flash35, .flashLite35]
+      [.flash38, .flash37, .flash36, .flash35, .flashLite35]
     )
     XCTAssertEqual(
       GeminiModelPreference(primary: .flash35).orderedModels,
       [.flash35, .flashLite35]
     )
+  }
+
+  func testGeminiPreferencePreservesSavedSelectionAndDefaultsToFlash38() {
+    XCTAssertEqual(GeminiModelPreference.load().primary, .flash38)
+    GeminiModelPreference(primary: .flash36).save()
+    XCTAssertEqual(GeminiModelPreference.load().orderedModels, [.flash36, .flash35, .flashLite35])
+    GeminiModelPreference(primary: .flash38).save()
+    XCTAssertEqual(GeminiModelPreference.load().primary, .flash38)
   }
 
   func testProviderSetupStateHydratesTheSavedLocalConfiguration() {
