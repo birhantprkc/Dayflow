@@ -83,13 +83,15 @@ private struct GoalSetupStatPair {
 }
 
 struct DayGoalFlowOverlay: View {
+  @Environment(\.dayflowTheme) private var theme
+
   let presentation: DayGoalFlowPresentation
   var onDismiss: () -> Void
 
   var body: some View {
     GeometryReader { proxy in
       ZStack {
-        Color(hex: "DB420B").opacity(0.10)
+        theme.sheetOverlay
           .ignoresSafeArea()
 
         DayGoalFlowView(
@@ -120,6 +122,9 @@ struct DayGoalFlowOverlay: View {
 }
 
 struct DayGoalFlowView: View {
+  @Environment(\.dayflowTheme) private var theme
+  @Environment(\.stylePreviewAfter) private var stylePreviewAfter
+
   let review: DayGoalReviewSnapshot
   let categories: [TimelineCategory]
   let setupReferenceStats: DayGoalSetupReferenceStats
@@ -157,14 +162,6 @@ struct DayGoalFlowView: View {
 
   private enum Design {
     static let canvasSize = CGSize(width: 1200, height: 680)
-    static let backgroundTop = Color(hex: "FFF3EC")
-    static let backgroundBottom = Color(hex: "FF8046").opacity(0.78)
-    static let orange = Color(hex: "FF8046")
-    static let mutedOrange = Color(hex: "FFEDE4")
-    static let mutedBorder = Color(hex: "B1A8A1")
-    static let text = Color(hex: "333333")
-    static let focus = Color(hex: "628CFF")
-    static let distraction = Color(hex: "FA8282")
   }
 
   var body: some View {
@@ -199,8 +196,8 @@ struct DayGoalFlowView: View {
   private var reviewScreen: some View {
     ZStack(alignment: .topLeading) {
       Text("Yesterday’s review")
-        .font(.custom("Instrument Serif", size: 36))
-        .foregroundColor(Design.text)
+        .font(.custom("InstrumentSerif-Regular", size: 36))
+        .foregroundColor(theme.textPrimary)
         .tracking(-1.08)
         .multilineTextAlignment(.center)
         .frame(width: 346, height: 44)
@@ -244,8 +241,8 @@ struct DayGoalFlowView: View {
 
     return ZStack(alignment: .topLeading) {
       Text("Where do you want to spend your time today?")
-        .font(.custom("Instrument Serif", size: 24))
-        .foregroundColor(.black)
+        .font(.custom("InstrumentSerif-Regular", size: 24))
+        .foregroundColor(theme.textPrimary)
         .multilineTextAlignment(.center)
         .frame(width: 620, height: 30)
         .position(x: 602, y: 64)
@@ -473,11 +470,42 @@ struct DayGoalFlowView: View {
     Button(action: action) {
       Text(title)
         .font(.custom("Figtree", size: 13).weight(.medium))
-        .foregroundColor(.white)
+        .foregroundColor(theme.primaryButtonText)
         .lineLimit(1)
         .frame(width: 120, height: 36)
-        .background(Design.orange)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .background(
+          Group {
+            if stylePreviewAfter {
+              Capsule().fill(theme.primaryButtonFill)
+            } else {
+              RoundedRectangle(cornerRadius: 6).fill(theme.primaryButtonFill)
+            }
+          }
+        )
+        .overlay(
+          Group {
+            if stylePreviewAfter {
+              InnerGlow(
+                shape: Capsule(), color: theme.primaryButtonInnerGlow, radius: 3
+              )
+            } else {
+              InnerGlow(
+                shape: RoundedRectangle(cornerRadius: 6), color: theme.primaryButtonInnerGlow,
+                radius: 3
+              )
+            }
+          }
+        )
+        .overlay(
+          Group {
+            if stylePreviewAfter {
+              Capsule().strokeBorder(theme.primaryButtonBorder, lineWidth: 0.75)
+            } else {
+              RoundedRectangle(cornerRadius: 6).strokeBorder(
+                theme.primaryButtonBorder, lineWidth: 0.75)
+            }
+          }
+        )
     }
     .buttonStyle(DayflowPressScaleButtonStyle(pressedScale: 0.97))
     .hoverScaleEffect(scale: 1.02)
@@ -488,14 +516,28 @@ struct DayGoalFlowView: View {
     Button(action: action) {
       Text(title)
         .font(.custom("Figtree", size: 13).weight(.medium))
-        .foregroundColor(Design.mutedBorder)
+        .foregroundColor(theme.secondaryButtonText)
         .lineLimit(1)
         .frame(width: 120, height: 36)
-        .background(Design.mutedOrange)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .background(
+          Group {
+            if stylePreviewAfter {
+              Capsule().fill(theme.secondaryButtonFill)
+            } else {
+              RoundedRectangle(cornerRadius: 6).fill(theme.secondaryButtonFill)
+            }
+          }
+        )
         .overlay(
-          RoundedRectangle(cornerRadius: 6)
-            .stroke(Design.mutedBorder, lineWidth: 1)
+          Group {
+            if stylePreviewAfter {
+              Capsule().strokeBorder(
+                theme.secondaryButtonBorder, lineWidth: 0.75)
+            } else {
+              RoundedRectangle(cornerRadius: 6).strokeBorder(
+                theme.secondaryButtonBorder, lineWidth: 0.75)
+            }
+          }
         )
     }
     .buttonStyle(DayflowPressScaleButtonStyle(pressedScale: 0.97))
