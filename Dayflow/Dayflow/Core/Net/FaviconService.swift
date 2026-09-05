@@ -352,6 +352,9 @@ struct FaviconImageView: View {
   let size: CGFloat
   let cornerRadius: CGFloat
 
+  @Environment(\.dayflowTheme) private var theme
+  let backgroundColor: Color?
+
   @State private var image: NSImage?
 
   init(
@@ -361,7 +364,8 @@ struct FaviconImageView: View {
     secondaryHost: String?,
     fallbackRaw: String? = nil,
     size: CGFloat,
-    cornerRadius: CGFloat = 2
+    cornerRadius: CGFloat = 2,
+    backgroundColor: Color? = nil
   ) {
     self.primaryRaw = primaryRaw
     self.secondaryRaw = secondaryRaw
@@ -370,6 +374,7 @@ struct FaviconImageView: View {
     self.fallbackRaw = fallbackRaw
     self.size = size
     self.cornerRadius = cornerRadius
+    self.backgroundColor = backgroundColor
     self._image = State(
       initialValue: FaviconService.shared.cachedOrRawFavicon(
         primaryRaw: Self.effectivePrimaryRaw(primaryRaw: primaryRaw, fallbackRaw: fallbackRaw),
@@ -383,11 +388,7 @@ struct FaviconImageView: View {
   var body: some View {
     Group {
       if let image {
-        Image(nsImage: image)
-          .resizable()
-          .interpolation(.high)
-          .aspectRatio(contentMode: .fit)
-          .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        favicon(image)
       } else {
         Color.clear
       }
@@ -410,6 +411,31 @@ struct FaviconImageView: View {
           secondaryHost: secondaryHost
         ) ?? initialImage
     }
+  }
+
+  private func favicon(_ image: NSImage) -> some View {
+    let isTemplate = ["ChatGPTLogo", "GithubIcon"].contains(image.name() ?? "")
+    let backing: Color? =
+      isTemplate
+      ? nil
+      : FaviconContrast.backing(
+        for: image, background: backgroundColor ?? theme.panelSolid,
+        base: theme.panelSolid
+      )
+    return Image(nsImage: image)
+      .renderingMode(isTemplate ? .template : .original)
+      .resizable()
+      .interpolation(.high)
+      .aspectRatio(contentMode: .fit)
+      .foregroundStyle(theme.textPrimary)
+      .padding(backing == nil ? 0 : 1)
+      .background {
+        if let backing {
+          RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(backing)
+        }
+      }
+      .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
   }
 
   private var effectivePrimaryRaw: String? {
@@ -447,5 +473,84 @@ struct FaviconImageView: View {
       return nil
     }
     return trimmed
+  }
+}
+
+// Analyze each decoded image once. Weak keys let samples leave with the image cache.
+@MainActor
+private enum FaviconContrast {
+  private static let samples = NSMapTable<NSImage, NSArray>(
+    keyOptions: .weakMemory, valueOptions: .strongMemory
+  )
+
+  static func backing(for image: NSImage, background: Color, base: Color) -> Color? {
+    guard let foreground = NSColor(background).usingColorSpace(.deviceRGB),
+      let base = NSColor(base).usingColorSpace(.deviceRGB)
+    else { return nil }
+    let alpha = foreground.alphaComponent
+    let backgroundLuminance = luminance(
+      foreground.redComponent * alpha + base.redComponent * (1 - alpha),
+      foreground.greenComponent * alpha + base.greenComponent * (1 - alpha),
+      foreground.blueComponent * alpha + base.blueComponent * (1 - alpha)
+    )
+    let values = pixelLuminances(image)
+    guard !values.isEmpty else { return nil }
+    // A substantial majority must disappear before we change the presentation.
+    guard readableFraction(values, against: backgroundLuminance) < 0.4 else { return nil }
+    let light: CGFloat = 0.88
+    let dark: CGFloat = 0.08
+    let lightScore = readableFraction(values, against: luminance(light, light, light))
+    let darkScore = readableFraction(values, against: luminance(dark, dark, dark))
+    return Color(white: lightScore >= darkScore ? light : dark)
+  }
+
+  private static func readableFraction(_ values: [CGFloat], against background: CGFloat) -> Double {
+    var readable = 0
+    for value in values {
+      let lighter: CGFloat = max(value, background) + 0.05
+      let darker: CGFloat = min(value, background) + 0.05
+      if lighter / darker >= 3 { readable += 1 }
+    }
+    return Double(readable) / Double(values.count)
+  }
+
+  private static func luminance(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) -> CGFloat {
+    func linear(_ value: CGFloat) -> CGFloat {
+      value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+    }
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+  }
+
+  private static func pixelLuminances(_ image: NSImage) -> [CGFloat] {
+    if let cached = samples.object(forKey: image) {
+      return cached.compactMap { value in
+        guard let number = value as? NSNumber else { return nil }
+        return CGFloat(number.doubleValue)
+      }
+    }
+    guard
+      let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: 24, pixelsHigh: 24, bitsPerSample: 8,
+        samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+      ), let context = NSGraphicsContext(bitmapImageRep: bitmap)
+    else { return [] }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = context
+    image.draw(
+      in: NSRect(x: 0, y: 0, width: 24, height: 24), from: .zero,
+      operation: .copy, fraction: 1)
+    NSGraphicsContext.restoreGraphicsState()
+    var values: [CGFloat] = []
+    for y in 0..<24 {
+      for x in 0..<24 {
+        guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+          color.alphaComponent >= 0.5
+        else { continue }
+        values.append(luminance(color.redComponent, color.greenComponent, color.blueComponent))
+      }
+    }
+    samples.setObject(values.map { NSNumber(value: Double($0)) } as NSArray, forKey: image)
+    return values
   }
 }
