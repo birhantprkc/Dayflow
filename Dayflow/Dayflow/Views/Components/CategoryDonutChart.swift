@@ -61,6 +61,9 @@ struct CategoryTimeData: Identifiable {
 // MARK: - Main View
 
 struct CategoryDonutChart: View {
+  @Environment(\.dayflowTheme) private var theme
+  @Environment(\.stylePreviewAfter) private var stylePreviewAfter
+
   let data: [CategoryTimeData]
   let size: CGFloat
 
@@ -79,7 +82,7 @@ struct CategoryDonutChart: View {
   }
 
   var body: some View {
-    VStack(spacing: 28) {
+    VStack(spacing: 24) {
       // Donut chart
       donutChart
 
@@ -91,52 +94,66 @@ struct CategoryDonutChart: View {
   // MARK: - Donut Chart
 
   private var donutChart: some View {
-    let chartSize = size - 8  // 4px gap on each side between white circle and colored ring
-    let innerRadiusRatio: CGFloat = 0.62
-    // Calculate actual radii for the gradient overlay
+    // Figma: 205pt donut, ~25pt ring, 2pt track showing outside and 3pt inside the ring.
+    let chartSize = size - 4
+    let innerRadiusRatio: CGFloat = 0.75
     let outerRadius = chartSize / 2
+    let glowSpread: CGFloat = 4
 
     return ZStack {
       // Background circle with light grey fill and shadow
       Circle()
-        .fill(Color(red: 0.95, green: 0.94, blue: 0.94))  // Light grey background
+        .fill(theme.donutRingBackground)
         .frame(width: size, height: size)
-        .shadow(
-          color: Color(red: 0.39, green: 0.28, blue: 0.22).opacity(0.35), radius: 5, x: 0, y: 0)
+        .shadow(color: theme.donutShadow, radius: 5, x: 0, y: 0)
 
-      // Swift Charts donut
-      Chart(data) { item in
-        SectorMark(
-          angle: .value("Duration", item.duration),
-          innerRadius: .ratio(innerRadiusRatio),
-          angularInset: 1.5
-        )
-        .cornerRadius(6)
-        .foregroundStyle(item.color)
-      }
-      .chartLegend(.hidden)
-      .frame(width: chartSize, height: chartSize)
+      if stylePreviewAfter {
+        // Sector fills: category color at 80% opacity (per mock)
+        sectorChart(fillOpacity: 0.8, ringOuterRadius: outerRadius)
+          .frame(width: chartSize, height: chartSize)
 
-      // Gradient overlay: lighter at inner edge, fading to clear at outer edge
-      Circle()
-        .fill(
-          RadialGradient(
-            stops: [
-              .init(color: .white.opacity(0.35), location: innerRadiusRatio),
-              .init(color: .white.opacity(0), location: 1.0),
-            ],
-            center: .center,
-            startRadius: 0,
-            endRadius: outerRadius
-          )
-        )
+        // Inner glow: a 4px full-color band just inside each sector's perimeter,
+        // built by punching a shrunken copy out of a full-color copy, then blurring.
+        ZStack {
+          sectorChart(fillOpacity: 1, ringOuterRadius: outerRadius)
+          sectorChart(fillOpacity: 1, ringOuterRadius: outerRadius, shrunkBy: glowSpread)
+            .blendMode(.destinationOut)
+        }
+        .compositingGroup()
+        .blur(radius: glowSpread)
+        .mask(sectorChart(fillOpacity: 1, ringOuterRadius: outerRadius))
         .frame(width: chartSize, height: chartSize)
         .allowsHitTesting(false)  // Don't block interactions
+      } else {
+        // "Before": shipped rendering — full-opacity sectors with a white
+        // radial sheen fading toward the outer edge.
+        sectorChart(fillOpacity: 1, ringOuterRadius: outerRadius)
+          .frame(width: chartSize, height: chartSize)
 
-      // White circle in center - slightly smaller than donut hole to show grey gap on inner edge
-      let innerGap: CGFloat = 8  // 4px gap on each side (matches outer gap)
+        Circle()
+          .fill(
+            RadialGradient(
+              stops: [
+                .init(color: .white.opacity(0.35), location: innerRadiusRatio),
+                .init(color: .white.opacity(0), location: 1.0),
+              ],
+              center: .center,
+              startRadius: 0,
+              endRadius: outerRadius
+            )
+          )
+          .frame(width: chartSize, height: chartSize)
+          .allowsHitTesting(false)  // Don't block interactions
+      }
+
+      // White circle in center - slightly smaller than donut hole to show grey gap on inner edge.
+      // In dark mode ("After") the hole is punched out instead so the panel
+      // background shows through.
+      let innerGap: CGFloat = 6
+      let punchOutHole = stylePreviewAfter && theme.isDark
       Circle()
-        .fill(Color.white)
+        .fill(punchOutHole ? Color.black : theme.donutCenterFill)
+        .blendMode(punchOutHole ? .destinationOut : .normal)
         .frame(
           width: chartSize * innerRadiusRatio - innerGap,
           height: chartSize * innerRadiusRatio - innerGap)
@@ -144,23 +161,43 @@ struct CategoryDonutChart: View {
       // Center content
       centerContent
     }
+    .compositingGroup()
     .frame(width: size, height: size)
+  }
+
+  /// One copy of the donut's sector geometry. `shrunkBy` insets every edge
+  /// (inner, outer, and angular) so the difference with the full-size copy
+  /// forms the inner-glow band.
+  private func sectorChart(
+    fillOpacity: Double, ringOuterRadius: CGFloat, shrunkBy spread: CGFloat = 0
+  ) -> some View {
+    Chart(data) { item in
+      SectorMark(
+        angle: .value("Duration", item.duration),
+        innerRadius: spread > 0 ? .fixed(ringOuterRadius * 0.75 + spread) : .ratio(0.75),
+        outerRadius: spread > 0 ? .inset(spread) : .automatic,
+        angularInset: 1.5 + spread
+      )
+      .cornerRadius(max(6 - spread, 0))
+      .foregroundStyle(item.color.opacity(fillOpacity))
+    }
+    .chartLegend(.hidden)
   }
 
   private var centerContent: some View {
     VStack(spacing: 4) {
       Text("TOTAL")
-        .font(.custom("Figtree", size: 8).weight(.bold))
-        .foregroundColor(Color(red: 0.65, green: 0.65, blue: 0.65))  // #a5a5a5
+        .font(.custom("Figtree", size: 12).weight(.bold))
+        .foregroundColor(Color(hex: "B1B1B1"))
 
       VStack(spacing: 0) {
         let total = formattedTotal
         Text("\(total.hours) hours")
           .font(.custom("InstrumentSerif-Regular", size: 16))
-          .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.2))  // #333333
+          .foregroundColor(theme.textPrimary)
         Text("\(total.minutes) minutes")
           .font(.custom("InstrumentSerif-Regular", size: 16))
-          .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.2))
+          .foregroundColor(theme.textPrimary)
       }
     }
   }
@@ -170,7 +207,7 @@ struct CategoryDonutChart: View {
   private var legendGrid: some View {
     let columns = Array(repeating: GridItem(.fixed(84.667), spacing: 14), count: 3)
 
-    return LazyVGrid(columns: columns, spacing: 14) {
+    return LazyVGrid(columns: columns, spacing: 12) {
       ForEach(data) { item in
         legendItem(for: item)
       }
@@ -182,18 +219,18 @@ struct CategoryDonutChart: View {
       // Color indicator + name row
       HStack(spacing: 4) {
         // Colored rectangle with border
-        RoundedRectangle(cornerRadius: 3)
-          .fill(item.color.opacity(0.4))
+        RoundedRectangle(cornerRadius: 2)
+          .fill(item.color.opacity(theme.legendSwatchOpacity))
           .overlay(
-            RoundedRectangle(cornerRadius: 3)
+            RoundedRectangle(cornerRadius: 2)
               .stroke(item.color, lineWidth: 1.25)
           )
           .frame(width: 10.667, height: 8)
 
         // Category name
         Text(item.name)
-          .font(.custom("FigtreeSans-Regular", size: 10))
-          .foregroundColor(Color(red: 0.39, green: 0.39, blue: 0.39))  // #636363
+          .font(.custom("Figtree", size: 10))
+          .foregroundColor(theme.textSecondary)
           .lineLimit(1)
           .truncationMode(.tail)
           .frame(width: 70, alignment: .leading)
@@ -201,8 +238,8 @@ struct CategoryDonutChart: View {
 
       // Duration
       Text(item.formattedDuration)
-        .font(.custom("FigtreeSans-SemiBold", size: 12))
-        .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.2))  // #333333
+        .font(.custom("Figtree", size: 12).weight(.semibold))
+        .foregroundColor(theme.textPrimary)
         .padding(.leading, 14)  // Align with text above
     }
     .frame(width: 84.667, alignment: .leading)
