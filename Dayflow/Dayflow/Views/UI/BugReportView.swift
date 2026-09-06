@@ -4,6 +4,16 @@ import SwiftUI
 /// The "Report" tab: an in-app support chat (PostHog Support) with email,
 /// Discord, and calendar links underneath for people who prefer those.
 struct BugReportView: View {
+  @Environment(\.dayflowTheme) private var theme
+  @Environment(\.stylePreviewAfter) private var stylePreviewAfter
+
+  /// "After" softens the button borders; "Before" keeps the shipped look.
+  private var buttonBorderColor: Color {
+    stylePreviewAfter
+      ? (theme.isDark ? Color(hex: "777777") : Color(hex: "D0D0D0"))
+      : theme.textPrimary
+  }
+
   private let emailAddress = "jerry@dayflow.so"
   private let discordInviteURL = URL(string: "https://discord.gg/9YPAtctE6k")
   private let callBookingURL = URL(string: "https://cal.com/jerry-liu/15min")
@@ -14,18 +24,6 @@ struct BugReportView: View {
   @State private var didCopyDebugLogs = false
   @State private var isCopyingDebugLogs = false
   @State private var debugCopyResetTask: DispatchWorkItem? = nil
-
-  /// Hard-coded light colors until the theming work lands.
-  private enum Palette {
-    static let textPrimary = Color(hex: "333333")
-    static let textSecondary = Color(hex: "707070")
-    static let textMuted = Color(hex: "979797")
-    static let rightPanelFill = Color.white.opacity(0.3)
-    static let rightPanelBorder = Color(hex: "ECECEC")
-    static let rightPanelShadow = Color.black.opacity(0.05)
-    static let secondaryButtonFill = Color(hex: "FCF9F7")
-    static let secondaryButtonBorder = Color(hex: "D0D0D0")
-  }
 
   private enum ChatState {
     case loading
@@ -38,13 +36,13 @@ struct BugReportView: View {
       VStack(spacing: 10) {
         Text("Thanks for using Dayflow")
           .font(.custom("InstrumentSerif-Regular", size: 40))
-          .foregroundColor(Palette.textPrimary)
+          .foregroundColor(theme.textPrimary)
 
         Text(
           "Bugs, feedback, questions, anything. Send a note below and we'll reply right here. Debug logs come along by default so we can actually fix things; uncheck the box if you'd rather not."
         )
-        .font(.custom("Figtree", size: 15))
-        .foregroundColor(Palette.textSecondary)
+        .font(.custom("Figtree", size: 16))
+        .foregroundColor(theme.textSecondary)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: 520)
@@ -83,23 +81,23 @@ struct BugReportView: View {
         unavailableNotice
       }
     }
-    .background(shape.fill(Palette.rightPanelFill))
-    .overlay(shape.strokeBorder(Palette.rightPanelBorder, lineWidth: 1))
+    .background(shape.fill(theme.rightPanelFill))
+    .overlay(shape.strokeBorder(theme.rightPanelBorder, lineWidth: 1))
     .clipShape(shape)
-    .shadow(color: Palette.rightPanelShadow, radius: 12, x: 0, y: 4)
+    .shadow(color: theme.rightPanelShadow, radius: 12, x: 0, y: 4)
   }
 
   private var unavailableNotice: some View {
     VStack(spacing: 14) {
       Image(systemName: "wifi.exclamationmark")
         .font(.system(size: 28, weight: .medium))
-        .foregroundColor(Palette.textMuted)
+        .foregroundColor(theme.textMuted)
       Text("Chat isn't reachable right now")
         .font(.custom("Figtree", size: 17).weight(.semibold))
-        .foregroundColor(Palette.textPrimary)
+        .foregroundColor(theme.textPrimary)
       Text("Email works just as well. Copy the debug logs below and paste them in if you can.")
         .font(.custom("Figtree", size: 14))
-        .foregroundColor(Palette.textSecondary)
+        .foregroundColor(theme.textSecondary)
         .multilineTextAlignment(.center)
         .frame(maxWidth: 360)
     }
@@ -125,9 +123,9 @@ struct BugReportView: View {
               .font(.custom("Figtree", size: 14).weight(.semibold))
           }
         },
-        background: Palette.secondaryButtonFill,
-        foreground: Palette.textPrimary,
-        borderColor: Palette.secondaryButtonBorder,
+        background: theme.secondaryButtonFill,
+        foreground: theme.textPrimary,
+        borderColor: buttonBorderColor,
         cornerRadius: 14,
         horizontalPadding: 18,
         verticalPadding: 11,
@@ -160,9 +158,9 @@ struct BugReportView: View {
             .font(.custom("Figtree", size: 14).weight(.semibold))
         }
       },
-      background: Palette.secondaryButtonFill,
-      foreground: Palette.textPrimary,
-      borderColor: Palette.secondaryButtonBorder,
+      background: theme.secondaryButtonFill,
+      foreground: theme.textPrimary,
+      borderColor: buttonBorderColor,
       cornerRadius: 14,
       horizontalPadding: 18,
       verticalPadding: 11,
@@ -174,7 +172,7 @@ struct BugReportView: View {
     Button(action: action) {
       Text(title)
         .font(.custom("Figtree", size: 13).weight(.medium))
-        .foregroundColor(Palette.textMuted)
+        .foregroundColor(theme.textMuted)
         .underline()
     }
     .buttonStyle(.plain)
