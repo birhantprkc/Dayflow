@@ -21,7 +21,7 @@ struct WeeklyTreemapCategoryCard: View {
         .fill(category.palette.shellFill)
         .overlay(
           RoundedRectangle(cornerRadius: Design.cornerRadius, style: .continuous)
-            .stroke(category.palette.shellBorder, lineWidth: 1)
+            .stroke(category.palette.shellBorder, lineWidth: 0.75)
         )
 
       VStack(spacing: 0) {
@@ -125,7 +125,7 @@ struct WeeklyTreemapLeafTile: View {
         .fill(palette.tileFill)
         .overlay(
           RoundedRectangle(cornerRadius: Design.cornerRadius, style: .continuous)
-            .stroke(palette.tileBorder, lineWidth: 1)
+            .stroke(palette.tileBorder, lineWidth: 0.5)
         )
         .overlay {
           if app.isPlaceholder {
@@ -169,16 +169,12 @@ struct WeeklyTreemapLeafTile: View {
 
       Text(app.formattedDuration)
         .font(.custom("Figtree-Regular", size: typography.detailFontSize))
-        .foregroundStyle(Color(hex: "333333"))
+        .foregroundStyle(WeeklyPalette.text)
         .lineLimit(1)
         .minimumScaleFactor(0.85)
 
       if let change = app.change {
-        Text(change.text)
-          .font(.custom("SpaceMono-Regular", size: typography.deltaFontSize))
-          .foregroundStyle(change.color)
-          .lineLimit(1)
-          .minimumScaleFactor(0.85)
+        WeeklyTreemapChangeBadge(change: change, fontSize: typography.deltaFontSize)
       }
     }
   }
@@ -189,7 +185,7 @@ struct WeeklyTreemapLeafTile: View {
 
       Text(app.formattedDuration)
         .font(.custom("Figtree-Regular", size: max(typography.detailFontSize - 1, 10)))
-        .foregroundStyle(Color(hex: "333333"))
+        .foregroundStyle(WeeklyPalette.text)
         .lineLimit(1)
         .minimumScaleFactor(0.85)
     }
@@ -217,7 +213,7 @@ struct WeeklyTreemapLeafTile: View {
   func nameText(fontSize: CGFloat) -> some View {
     Text(app.name)
       .font(.custom("InstrumentSerif-Regular", size: fontSize))
-      .foregroundStyle(Color.black)
+      .foregroundStyle(WeeklyPalette.text)
       .multilineTextAlignment(.center)
       .lineLimit(1)
       .minimumScaleFactor(0.7)
@@ -262,26 +258,23 @@ struct WeeklyTreemapHoverCard: View {
     VStack(alignment: .leading, spacing: 6) {
       Text(app.name)
         .font(.custom("InstrumentSerif-Regular", size: 17))
-        .foregroundStyle(Color.black)
+        .foregroundStyle(WeeklyPalette.text)
         .lineLimit(1)
 
       Text(app.formattedDuration)
         .font(.custom("Figtree-Regular", size: 12))
-        .foregroundStyle(Color(hex: "333333"))
+        .foregroundStyle(WeeklyPalette.text)
         .lineLimit(1)
 
       if let change = app.change {
-        Text(change.text)
-          .font(.custom("SpaceMono-Regular", size: 12))
-          .foregroundStyle(change.color)
-          .lineLimit(1)
+        WeeklyTreemapChangeBadge(change: change, fontSize: 12)
       }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     .padding(12)
     .background(
       RoundedRectangle(cornerRadius: Design.cornerRadius, style: .continuous)
-        .fill(Color.white.opacity(0.96))
+        .fill(WeeklyPalette.tooltipFill)
         .overlay(
           RoundedRectangle(cornerRadius: Design.cornerRadius, style: .continuous)
             .fill(palette.shellFill.opacity(0.85))
@@ -291,7 +284,26 @@ struct WeeklyTreemapHoverCard: View {
       RoundedRectangle(cornerRadius: Design.cornerRadius, style: .continuous)
         .stroke(palette.shellBorder.opacity(0.95), lineWidth: 1)
     )
-    .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 6)
+    .shadow(color: WeeklyPalette.shadow, radius: 14, x: 0, y: 6)
+  }
+}
+
+struct WeeklyTreemapChangeBadge: View {
+  let change: WeeklyTreemapChange
+  let fontSize: CGFloat
+
+  var body: some View {
+    Text(change.text)
+      .font(.system(size: fontSize, design: .monospaced))
+      .foregroundStyle(change.color)
+      .lineLimit(1)
+      .minimumScaleFactor(0.85)
+      .padding(.horizontal, 5)
+      .padding(.vertical, 2)
+      .background(
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+          .fill(change.badgeFill)
+      )
   }
 }
 
