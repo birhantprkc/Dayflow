@@ -353,7 +353,6 @@ struct SettingsProvidersTabView: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .environment(\.colorScheme, .light)
         .onChange(of: viewModel.selectedGeminiModel) { _, newValue in
           viewModel.persistGeminiModelSelection(newValue, source: "settings")
         }
@@ -568,7 +567,7 @@ struct SettingsProvidersTabView: View {
         if config.text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
           Text(config.defaultText)
             .font(.custom("Figtree", size: 12))
-            .foregroundColor(SettingsStyle.meta)
+            .foregroundColor(SettingsStyle.secondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .fixedSize(horizontal: false, vertical: true)
@@ -577,7 +576,9 @@ struct SettingsProvidersTabView: View {
 
         TextEditor(text: config.text)
           .font(.custom("Figtree", size: 12))
-          .foregroundColor(SettingsStyle.text.opacity(config.isEnabled.wrappedValue ? 1 : 0.4))
+          .foregroundColor(
+            config.isEnabled.wrappedValue ? SettingsStyle.text : SettingsStyle.secondary
+          )
           .scrollContentBackground(.hidden)
           .disabled(!config.isEnabled.wrappedValue)
           .padding(.horizontal, 10)
@@ -586,13 +587,12 @@ struct SettingsProvidersTabView: View {
       }
       .background(
         RoundedRectangle(cornerRadius: 7, style: .continuous)
-          .fill(Color.white.opacity(0.7))
+          .fill(SettingsStyle.editorFill)
           .overlay(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-              .stroke(Color.black.opacity(0.12), lineWidth: 1)
+              .stroke(SettingsStyle.editorBorder, lineWidth: 1)
           )
       )
-      .opacity(config.isEnabled.wrappedValue ? 1 : 0.6)
     }
   }
 }
