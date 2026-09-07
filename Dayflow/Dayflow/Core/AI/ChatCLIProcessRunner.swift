@@ -87,9 +87,10 @@ struct ClaudeCLIExecutionProfile: Sendable {
     ]
     arguments.append(contentsOf: persistenceArguments)
     if let allowedReadPath {
+      // Claude permission rules use // for absolute paths; / is project-relative.
       arguments.append(contentsOf: [
         "--allowedTools",
-        LoginShellRunner.shellEscape("Read(\(allowedReadPath))"),
+        LoginShellRunner.shellEscape("Read(/\(allowedReadPath))"),
       ])
     }
     return arguments
@@ -474,7 +475,14 @@ struct ChatCLIProcessRunner {
       for override in codexConfigOverrides {
         cmdParts.append(contentsOf: ["-c", LoginShellRunner.shellEscape(override)])
       }
-      if shouldDisableConfiguredCodexMCPServers(processEnvironment: processEnvironment) {
+      let helpCommand = "\(executableCommand) exec\(sessionId == nil ? "" : " resume") --help"
+      let supportsIgnoringUserConfig = LoginShellRunner.run(helpCommand, timeout: 10)
+        .stdout.contains("--ignore-user-config")
+      if supportsIgnoringUserConfig {
+        // Keep auth and resumable sessions in the normal home without loading
+        // unrelated MCP configuration or moving sessions into a temporary home.
+        cmdParts.append("--ignore-user-config")
+      } else if shouldDisableConfiguredCodexMCPServers(processEnvironment: processEnvironment) {
         let mcpServers = LoginShellRunner.getCodexMCPServerNames(
           executableURL: codexExecutable!.executableURL
         )
@@ -534,6 +542,7 @@ struct ChatCLIProcessRunner {
     var stderrBuffer = Data()
     var sawTextDelta = false
     var didYieldComplete = false
+    var didYieldError = false
 
     func cleanupStreamingResources() {
       stdoutHandle.readabilityHandler = nil
@@ -555,6 +564,7 @@ struct ChatCLIProcessRunner {
         guard !line.isEmpty else { continue }
 
         if let event = parseJSONLLine(tool: tool, line: line) {
+          if case .error = event { didYieldError = true }
           var shouldYield = true
           if case .textDelta(let text) = event {
             sawTextDelta = true
@@ -658,6 +668,7 @@ struct ChatCLIProcessRunner {
         let trimmed = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
         let line = stripANSIEscapes(trimmed)
         if !line.isEmpty, let event = parseJSONLLine(tool: tool, line: line) {
+          if case .error = event { didYieldError = true }
           var shouldYield = true
           if case .textDelta(let text) = event {
             sawTextDelta = true
@@ -684,7 +695,8 @@ struct ChatCLIProcessRunner {
       (
         accumulatedText,
         didYieldComplete,
-        String(data: stderrBuffer, encoding: .utf8) ?? ""
+        String(data: stderrBuffer, encoding: .utf8) ?? "",
+        didYieldError
       )
     }
 
@@ -750,7 +762,7 @@ struct ChatCLIProcessRunner {
       continuation.yield(event)
     }
 
-    if process.terminationStatus != 0 {
+    if process.terminationStatus != 0, !finalState.3 {
       let stderr = finalState.2
       if stderr.contains("command not found") {
         continuation.yield(
@@ -787,6 +799,18 @@ struct ChatCLIProcessRunner {
 
     if event.type == "thread.started", let threadId = event.thread_id {
       return .sessionStarted(id: threadId)
+    }
+
+    if event.type == "error" || event.type == "turn.failed" {
+      let message = event.error?.message ?? event.message ?? "Codex could not complete the request."
+      // API failures can themselves be JSON encoded inside the JSONL message.
+      if let nestedData = message.data(using: .utf8),
+        let nested = try? JSONDecoder().decode(CodexJSONLEvent.self, from: nestedData),
+        let detail = nested.error?.message ?? nested.message
+      {
+        return .error(detail)
+      }
+      return .error(message)
     }
 
     guard let item = event.item else { return nil }
