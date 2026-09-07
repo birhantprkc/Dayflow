@@ -31,6 +31,12 @@ struct CodexJSONLEvent: Decodable {
   let type: String
   let thread_id: String?
   let item: CodexItem?
+  let message: String?
+  let error: CodexError?
+
+  struct CodexError: Decodable {
+    let message: String?
+  }
 
   struct CodexItem: Decodable {
     let type: String
