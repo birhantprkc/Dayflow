@@ -15,7 +15,7 @@
   </p>
 
   <p>
-    <a href="https://dayflow.so/api/download?source=github_readme_top">
+    <a href="https://www.dayflow.so/api/download?source=github_readme_top">
       <img src="docs/images/download_dayflow_button.png" alt="Download Dayflow for Mac" width="352">
     </a>
   </p>
@@ -101,7 +101,7 @@ If you choose a cloud provider, activity data needed for analysis is sent to tha
 Download the latest `Dayflow.dmg` from GitHub Releases:
 
 <p>
-  <a href="https://dayflow.so/api/download?source=github_readme_install">
+  <a href="https://www.dayflow.so/api/download?source=github_readme_install">
     <img src="docs/images/download_dayflow_button.png" alt="Download Dayflow for Mac" width="352">
   </a>
 </p>
@@ -137,3 +137,10 @@ Issues and pull requests are welcome. If you are planning a larger change, open 
 ## License
 
 Dayflow is licensed under the MIT License.
+
+<p align="center">
+  <a href="https://www.dayflow.so/">dayflow.so</a> ·
+  <a href="https://www.dayflow.so/pricing/">Pricing</a> ·
+  <a href="https://www.dayflow.so/privacy/">Privacy</a> ·
+  <a href="https://www.dayflow.so/blog/">Guides</a>
+</p>
