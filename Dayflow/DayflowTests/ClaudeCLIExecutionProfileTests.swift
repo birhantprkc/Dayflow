@@ -26,7 +26,7 @@ final class ClaudeCLIExecutionProfileTests: XCTestCase {
     XCTAssertEqual(try argument(after: "--tools", in: parts), "Read")
     XCTAssertEqual(
       try argument(after: "--allowedTools", in: parts),
-      LoginShellRunner.shellEscape("Read(/tmp/contact-sheet.jpg)")
+      LoginShellRunner.shellEscape("Read(//tmp/contact-sheet.jpg)")
     )
     XCTAssertEqual(try argument(after: "--name", in: parts), "dayflow-transcription")
     XCTAssertEqual(
@@ -115,7 +115,7 @@ final class ClaudeCLIExecutionProfileTests: XCTestCase {
     XCTAssertEqual(try argument(after: "--tools", in: correction), "Read")
     XCTAssertEqual(
       try argument(after: "--allowedTools", in: correction),
-      LoginShellRunner.shellEscape("Read(/tmp/contact-sheet.jpg)")
+      LoginShellRunner.shellEscape("Read(//tmp/contact-sheet.jpg)")
     )
     XCTAssertFalse(correction.contains("--disallowedTools"))
     XCTAssertEqual(
