@@ -211,16 +211,17 @@ final class ChatService: ObservableObject {
       pendingFlushTask?.cancel()
       pendingFlushTask = nil
       lastFlushAt = Date()
-      streamingText = responseText
+      let visibleText = ChatMetadataParser.visibleStreamingText(responseText)
+      streamingText = visibleText
 
       if let id = responseMessageId,
         let index = messages.firstIndex(where: { $0.id == id })
       {
-        messages[index] = ChatMessage(id: id, role: .assistant, content: responseText)
-      } else if responseMessageId == nil {
+        messages[index] = ChatMessage(id: id, role: .assistant, content: visibleText)
+      } else if responseMessageId == nil, !visibleText.isEmpty {
         let id = UUID()
         responseMessageId = id
-        messages.append(ChatMessage(id: id, role: .assistant, content: responseText))
+        messages.append(ChatMessage(id: id, role: .assistant, content: visibleText))
       }
     }
 
@@ -321,7 +322,8 @@ final class ChatService: ObservableObject {
           } else if !sawTextDelta {
             responseText = text
           }
-          streamingText = responseText
+          let visibleText = ChatMetadataParser.visibleStreamingText(responseText)
+          streamingText = visibleText
           log(.response, responseText)
           if let id = responseMessageId,
             let index = messages.firstIndex(where: { $0.id == id })
@@ -329,10 +331,10 @@ final class ChatService: ObservableObject {
             messages[index] = ChatMessage(
               id: id,
               role: .assistant,
-              content: responseText
+              content: visibleText
             )
           } else if responseMessageId == nil,
-            !responseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            !visibleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
           {
             let id = UUID()
             responseMessageId = id
@@ -340,7 +342,7 @@ final class ChatService: ObservableObject {
               ChatMessage(
                 id: id,
                 role: .assistant,
-                content: responseText
+                content: visibleText
               ))
           }
 
@@ -352,6 +354,16 @@ final class ChatService: ObservableObject {
             status.errorMessage = errorMessage
           }
         }
+      }
+      if isResume, responseText.isEmpty, let error,
+        Self.isMissingSessionError(error)
+      {
+        pendingFlushTask?.cancel()
+        currentSessionId = nil
+        self.error = nil
+        log(.info, "Saved CLI session is unavailable; rebuilding from conversation history")
+        await processConversation(provider: provider)
+        return
       }
     } catch {
       // Show error
@@ -431,6 +443,12 @@ final class ChatService: ObservableObject {
   }
 
   // MARK: - Prompt Building
+
+  static func isMissingSessionError(_ message: String) -> Bool {
+    let text = message.lowercased()
+    return text.contains("no rollout found for thread id")
+      || text.contains("no conversation found with session id")
+  }
 
   private func buildChatRequest(provider: DashboardChatProvider, isResume: Bool)
     -> DashboardChatRequest
