@@ -9,6 +9,23 @@
 import Foundation
 
 enum ChatMetadataParser {
+  /// Metadata is only consumed after the turn finishes. Hide its unfinished
+  /// fences too, so token-by-token updates never flash memory or suggestions.
+  static func visibleStreamingText(_ text: String) -> String {
+    let pattern = "(?im)^[ \\t]*```(?:suggestions|memory)\\b"
+    if let range = text.range(of: pattern, options: .regularExpression) {
+      return String(text[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    let lastLineStart = text.lastIndex(of: "\n").map { text.index(after: $0) } ?? text.startIndex
+    let lastLine = text[lastLineStart...].trimmingCharacters(in: .whitespaces).lowercased()
+    if !lastLine.isEmpty,
+      ["```suggestions", "```memory"].contains(where: { $0.hasPrefix(lastLine) })
+    {
+      return String(text[..<lastLineStart]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    return text
+  }
+
   struct AssistantMetadata {
     let cleanedText: String
     let suggestions: [String]
