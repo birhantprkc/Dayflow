@@ -54,12 +54,16 @@ extension DailyView {
   }
   var dailyLockScreenBackground: some View {
     GeometryReader { geo in
-      Image("JournalPreview")
-        .resizable()
-        .scaledToFill()
-        .frame(width: geo.size.width, height: geo.size.height)
-        .clipped()
-        .allowsHitTesting(false)
+      ZStack {
+        theme.panelSolid
+        Image("DailyAccessPreview")
+          .resizable()
+          .scaledToFill()
+          .opacity(theme.isDark ? 0.04 : 1)
+      }
+      .frame(width: geo.size.width, height: geo.size.height)
+      .clipped()
+      .allowsHitTesting(false)
     }
   }
   var isNotificationPermissionButtonDisabled: Bool {
