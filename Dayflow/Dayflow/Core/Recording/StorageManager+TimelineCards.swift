@@ -3,6 +3,46 @@ import GRDB
 import Sentry
 
 extension StorageManager {
+  /// Check whether a day meets the requested timeline activity threshold.
+  func hasMinimumTimelineActivity(forDay day: String, minimumMinutes: Int = 60) -> Bool {
+    guard let dayDate = dateFormatter.date(from: day) else { return false }
+
+    let calendar = Calendar.current
+
+    // Get 4 AM boundaries
+    var startComponents = calendar.dateComponents([.year, .month, .day], from: dayDate)
+    startComponents.hour = 4
+    startComponents.minute = 0
+    startComponents.second = 0
+    guard let dayStart = calendar.date(from: startComponents) else { return false }
+
+    guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayDate) else { return false }
+    var endComponents = calendar.dateComponents([.year, .month, .day], from: nextDay)
+    endComponents.hour = 4
+    endComponents.minute = 0
+    endComponents.second = 0
+    guard let dayEnd = calendar.date(from: endComponents) else { return false }
+
+    let startTs = Int(dayStart.timeIntervalSince1970)
+    let endTs = Int(dayEnd.timeIntervalSince1970)
+
+    // Sum total duration of timeline cards for the day
+    let totalMinutes: Int? = try? timedRead("hasMinimumTimelineActivity") { db in
+      // Calculate sum of (end_ts - start_ts) for all cards, converted to minutes
+      let result = try Int.fetchOne(
+        db,
+        sql: """
+              SELECT COALESCE(SUM(end_ts - start_ts), 0) / 60 as total_minutes
+              FROM timeline_cards
+              WHERE start_ts >= ? AND start_ts < ?
+                AND is_deleted = 0
+          """, arguments: [startTs, endTs])
+      return result
+    }
+
+    return (totalMinutes ?? 0) >= minimumMinutes
+  }
+
   func hasAnyTimelineCards() -> Bool {
     (try? timedRead("hasAnyTimelineCards") { db in
       try Bool.fetchOne(

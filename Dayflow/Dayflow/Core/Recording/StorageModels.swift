@@ -1,42 +1,5 @@
 import Foundation
 
-struct JournalEntry: Codable, Sendable {
-  var id: Int64?
-  var day: String  // "2025-01-15" format (4AM boundary)
-  var intentions: String?  // Morning intentions
-  var notes: String?  // Additional notes
-  var goals: String?  // Long-term goals
-  var reflections: String?  // Evening reflection
-  var summary: String?  // AI-generated summary
-  var status: String  // "draft", "intentions_set", "complete"
-  var createdAt: Date?
-  var updatedAt: Date?
-
-  init(
-    id: Int64? = nil,
-    day: String,
-    intentions: String? = nil,
-    notes: String? = nil,
-    goals: String? = nil,
-    reflections: String? = nil,
-    summary: String? = nil,
-    status: String = "draft",
-    createdAt: Date? = nil,
-    updatedAt: Date? = nil
-  ) {
-    self.id = id
-    self.day = day
-    self.intentions = intentions
-    self.notes = notes
-    self.goals = goals
-    self.reflections = reflections
-    self.summary = summary
-    self.status = status
-    self.createdAt = createdAt
-    self.updatedAt = updatedAt
-  }
-}
-
 // Daily standup document stored as a JSON blob keyed by standup day.
 struct DailyStandupEntry: Codable, Sendable {
   let standupDay: String  // "2025-01-15" format (Gregorian, local timezone)
