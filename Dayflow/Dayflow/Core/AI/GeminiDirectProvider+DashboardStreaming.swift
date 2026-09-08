@@ -2,6 +2,7 @@ import Foundation
 
 extension GeminiDirectProvider {
   func streamDashboardTurn(
+    model: GeminiModel,
     systemInstruction: String,
     contents: [[String: Any]],
     includeThinkingConfig: Bool,
@@ -12,7 +13,8 @@ extension GeminiDirectProvider {
       contents: contents,
       includeThinkingConfig: includeThinkingConfig
     )
-    var request = URLRequest(url: URL(string: dashboardStreamEndpoint + "?alt=sse&key=\(apiKey)")!)
+    var request = URLRequest(
+      url: URL(string: dashboardStreamEndpoint(model: model) + "?alt=sse&key=\(apiKey)")!)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.timeoutInterval = 180
@@ -90,6 +92,7 @@ extension GeminiDirectProvider {
   }
 
   func generateDashboardTurnNonStreaming(
+    model: GeminiModel,
     systemInstruction: String,
     contents: [[String: Any]],
     includeThinkingConfig: Bool
@@ -101,7 +104,8 @@ extension GeminiDirectProvider {
       contents: contents,
       includeThinkingConfig: includeThinkingConfig
     )
-    var request = URLRequest(url: URL(string: dashboardGenerateEndpoint + "?key=\(apiKey)")!)
+    var request = URLRequest(
+      url: URL(string: dashboardGenerateEndpoint(model: model) + "?key=\(apiKey)")!)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.timeoutInterval = 180

@@ -3,15 +3,17 @@ import Foundation
 extension GeminiDirectProvider {
   // MARK: - Dashboard Chat (Gemini function calling)
 
-  static let dashboardChatModel = GeminiModel.flashLite35.rawValue
+  static let dashboardChatModels: [GeminiModel] = [
+    .flash38, .flash37, .flash36, .flash35, .flashLite35,
+  ]
   static let dashboardChatMaxToolRounds = 20
   static let dashboardChatTimelinePayloadSoftLimitBytes = 800_000
-  var dashboardGenerateEndpoint: String {
-    "https://generativelanguage.googleapis.com/v1beta/models/\(Self.dashboardChatModel):generateContent"
+  func dashboardGenerateEndpoint(model: GeminiModel) -> String {
+    "https://generativelanguage.googleapis.com/v1beta/models/\(model.rawValue):generateContent"
   }
 
-  var dashboardStreamEndpoint: String {
-    "https://generativelanguage.googleapis.com/v1beta/models/\(Self.dashboardChatModel):streamGenerateContent"
+  func dashboardStreamEndpoint(model: GeminiModel) -> String {
+    "https://generativelanguage.googleapis.com/v1beta/models/\(model.rawValue):streamGenerateContent"
   }
 
   struct DashboardFunctionCall {
@@ -167,16 +169,55 @@ extension GeminiDirectProvider {
     contents: [[String: Any]],
     continuation: AsyncThrowingStream<ChatStreamEvent, Error>.Continuation
   ) async throws -> DashboardTurnResult {
+    try await Self.withDashboardModelFallback { model in
+      try await runDashboardTurn(
+        model: model,
+        systemInstruction: systemInstruction,
+        contents: contents,
+        continuation: continuation
+      )
+    }
+  }
+
+  static func withDashboardModelFallback(
+    attempt: (GeminiModel) async throws -> DashboardTurnResult
+  ) async throws -> DashboardTurnResult {
+    for (index, model) in dashboardChatModels.enumerated() {
+      try Task.checkCancellation()
+      do {
+        return try await attempt(model)
+      } catch {
+        if error is CancellationError || (error as NSError).code == NSURLErrorCancelled {
+          throw error
+        }
+        guard index < dashboardChatModels.count - 1 else { throw error }
+        print(
+          "Gemini dashboard chat: \(model.rawValue) failed; trying \(dashboardChatModels[index + 1].rawValue)"
+        )
+      }
+    }
+    preconditionFailure("Dashboard chat requires at least one model")
+  }
+
+  private func runDashboardTurn(
+    model: GeminiModel,
+    systemInstruction: String,
+    contents: [[String: Any]],
+    continuation: AsyncThrowingStream<ChatStreamEvent, Error>.Continuation
+  ) async throws -> DashboardTurnResult {
     var includeThinkingConfig = true
 
     do {
       return try await streamDashboardTurn(
+        model: model,
         systemInstruction: systemInstruction,
         contents: contents,
         includeThinkingConfig: includeThinkingConfig,
         continuation: continuation
       )
     } catch {
+      try Task.checkCancellation()
+      if (error as NSError).code == NSURLErrorCancelled { throw error }
       if shouldRetryDashboardWithoutThinkingConfig(error) {
         includeThinkingConfig = false
         print("🔎 GEMINI DEBUG: dashboard_chat retrying without thinkingConfig")
@@ -191,12 +232,15 @@ extension GeminiDirectProvider {
 
     do {
       return try await streamDashboardTurn(
+        model: model,
         systemInstruction: systemInstruction,
         contents: contents,
         includeThinkingConfig: includeThinkingConfig,
         continuation: continuation
       )
     } catch {
+      try Task.checkCancellation()
+      if (error as NSError).code == NSURLErrorCancelled { throw error }
       logGeminiFailure(
         context: "dashboard_chat.stream.attempt2",
         response: nil,
@@ -206,6 +250,7 @@ extension GeminiDirectProvider {
     }
 
     return try await generateDashboardTurnNonStreaming(
+      model: model,
       systemInstruction: systemInstruction,
       contents: contents,
       includeThinkingConfig: includeThinkingConfig
@@ -264,7 +309,7 @@ extension GeminiDirectProvider {
     includeThinkingConfig: Bool
   ) -> [String: Any] {
     var generationConfig: [String: Any] = [
-      "maxOutputTokens": 8192,
+      "maxOutputTokens": 8192
     ]
     if includeThinkingConfig {
       generationConfig["thinkingConfig"] = [
