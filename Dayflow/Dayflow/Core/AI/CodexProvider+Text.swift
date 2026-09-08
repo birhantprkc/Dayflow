@@ -8,7 +8,7 @@ extension CodexProvider {
       tool: .codex,
       prompt: prompt,
       workingDirectory: config.workingDirectory,
-      model: "gpt-5.4",
+      model: "gpt-5.6-luna",
       reasoningEffort: "low",
       sessionId: sessionId
     )
