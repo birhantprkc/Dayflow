@@ -562,7 +562,7 @@ final class StorageManager: StorageManaging, @unchecked Sendable {
               CREATE INDEX IF NOT EXISTS idx_batch_screenshots_screenshot ON batch_screenshots(screenshot_id);
           """)
 
-      // Journal entries table: stores daily intentions, reflections, and summaries
+      // Legacy Journal table retained for existing user data; the feature is retired.
       try db.execute(
         sql: """
               CREATE TABLE IF NOT EXISTS journal_entries (
