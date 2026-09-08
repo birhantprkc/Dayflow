@@ -192,7 +192,7 @@ struct DailyProviderOnboardingView: View {
               )
               .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(AccessButtonStyle())
             .disabled(!availability.isAvailable)
             .pointingHandCursor(enabled: availability.isAvailable)
           }
@@ -243,7 +243,7 @@ private struct DailyAccessHeaderView: View {
 
       Text("BETA")
         .font(.custom("Figtree-Bold", size: 11))
-        .foregroundColor(.white)
+        .foregroundColor(theme.primaryButtonText)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
@@ -273,7 +273,7 @@ private struct DailyAnimatedRequestAccessButton: View {
 
   private var backgroundColor: Color {
     guard isEnabled else {
-      return theme.textMuted
+      return theme.secondaryButtonFill
     }
     return theme.primaryButtonFill
   }
@@ -303,7 +303,7 @@ private struct DailyAnimatedRequestAccessButton: View {
           Text("Unlock Daily")
             .font(.custom("Figtree", size: 15))
             .fontWeight(.semibold)
-            .foregroundColor(.white)
+            .foregroundColor(isEnabled ? theme.primaryButtonText : theme.textSecondary)
             .opacity(requestState == .idle ? 1 : 0)
             .offset(y: requestState == .idle ? 0 : -5)
 
@@ -314,7 +314,7 @@ private struct DailyAnimatedRequestAccessButton: View {
               .font(.custom("Figtree", size: 15))
               .fontWeight(.semibold)
           }
-          .foregroundColor(.white)
+          .foregroundColor(isEnabled ? theme.primaryButtonText : theme.textSecondary)
           .opacity(requestState == .granted ? 1 : 0)
           .offset(y: requestState == .granted ? 0 : 5)
         }
@@ -327,7 +327,7 @@ private struct DailyAnimatedRequestAccessButton: View {
       .animation(stateChangeAnimation, value: requestState)
       .animation(successRingAnimation, value: showsSuccessRing)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(AccessButtonStyle())
     .disabled(requestState == .granted || !isEnabled)
     .pointingHandCursor(enabled: requestState == .idle && isEnabled)
   }
@@ -347,7 +347,7 @@ private struct DailyNotificationPermissionPanelView: View {
     VStack(spacing: 16) {
       Text("Turn on notifications to unlock Daily")
         .font(.custom("InstrumentSerif-Regular", size: 30))
-        .foregroundColor(theme.accentText)
+        .foregroundColor(theme.textPrimary)
         .multilineTextAlignment(.center)
 
       Text("Dayflow uses notifications to tell you when your recap is ready.")
@@ -412,5 +412,12 @@ private struct DailyNotificationPermissionPanelView: View {
         )
     )
     .shadow(color: Color.black.opacity(0.08), radius: 18, x: 0, y: 8)
+  }
+}
+
+// Keep disabled access requirements readable; their subdued fill signals the state.
+struct AccessButtonStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label.opacity(configuration.isPressed ? 0.85 : 1)
   }
 }
