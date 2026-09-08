@@ -29,13 +29,33 @@ enum DayflowAppearance: String, CaseIterable, Identifiable {
     }
   }
 
-  /// `nil` means "let the system decide".
-  var preferredColorScheme: ColorScheme? {
+  func colorScheme(system: ColorScheme) -> ColorScheme {
     switch self {
-    case .system: return nil
+    case .system: return system
     case .light: return .light
     case .dark: return .dark
     }
+  }
+}
+
+/// Keep an explicit system scheme so switching back never passes nil to SwiftUI.
+@MainActor
+final class SystemAppearanceObserver: ObservableObject {
+  @Published private(set) var colorScheme: ColorScheme
+  private var observation: NSKeyValueObservation?
+
+  init() {
+    colorScheme = Self.currentColorScheme
+    observation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+      Task { @MainActor [weak self] in
+        self?.colorScheme = Self.currentColorScheme
+      }
+    }
+  }
+
+  private static var currentColorScheme: ColorScheme {
+    NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+      ? .dark : .light
   }
 }
 

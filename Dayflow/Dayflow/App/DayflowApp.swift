@@ -139,15 +139,14 @@ struct AppRootView: View {
 struct DayflowApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
   @AppStorage("didOnboard") private var didOnboard = false
+  @StateObject private var systemAppearance = SystemAppearanceObserver()
   @AppStorage(DayflowAppearance.storageKey) private var appearance: DayflowAppearance = .system
   @AppStorage("useBlankUI") private var useBlankUI = false
-  @AppStorage("hasCompletedJournalOnboarding") private var hasCompletedJournalOnboarding = false
   @State private var showVideoLaunch = true
   @State private var contentOpacity = 0.0
   @State private var contentScale = 0.98
   @State private var isShowingGitHubStarPrompt = false
   @StateObject private var categoryStore = CategoryStore()
-  @StateObject private var journalCoordinator = JournalCoordinator()
 
   init() {
     // Writing to stdout after its reader has gone away (app launched from a
@@ -172,7 +171,6 @@ struct DayflowApp: App {
             AppRootView(isShowingGitHubStarPrompt: $isShowingGitHubStarPrompt)
               .environmentObject(categoryStore)
               .environmentObject(updaterManager)
-              .environmentObject(journalCoordinator)
           } else if !showVideoLaunch {
             // Onboarding is designed light-only.
             OnboardingFlow()
@@ -221,18 +219,6 @@ struct DayflowApp: App {
             }
         }
 
-        // Journal onboarding video (full window coverage, above sidebar)
-        if journalCoordinator.showOnboardingVideo {
-          JournalOnboardingVideoView(onComplete: {
-            withAnimation(.easeOut(duration: 0.3)) {
-              journalCoordinator.showOnboardingVideo = false
-              hasCompletedJournalOnboarding = true
-            }
-          })
-          .ignoresSafeArea()
-          .transition(.opacity)
-        }
-
         if didOnboard && !showVideoLaunch && isShowingGitHubStarPrompt {
           GitHubStarPromptCard(
             onStar: starDayflow,
@@ -257,8 +243,10 @@ struct DayflowApp: App {
             .accessibilityHidden(true)
         }
       }
-      // Onboarding stays light; the main app follows the user's appearance setting.
-      .preferredColorScheme(didOnboard ? appearance.preferredColorScheme : .light)
+      // Use an explicit scheme even for System; clearing an override can lag until focus changes.
+      .preferredColorScheme(
+        didOnboard ? appearance.colorScheme(system: systemAppearance.colorScheme) : .light
+      )
       .resolveDayflowTheme()
       .resolveStylePreview()
       .onAppear {
@@ -380,8 +368,6 @@ struct DayflowApp: App {
         NotificationCenter.default.post(name: .navigateToDaily, object: nil)
       case .weekly:
         NotificationCenter.default.post(name: .navigateToWeekly, object: nil)
-      case .journal:
-        NotificationCenter.default.post(name: .navigateToJournal, object: nil)
       }
     }
   }
@@ -392,7 +378,6 @@ struct DayflowApp: App {
 extension Notification.Name {
   static let analyticsPreferenceChanged = Notification.Name("analyticsPreferenceChanged")
   static let showWhatsNew = Notification.Name("showWhatsNew")
-  static let navigateToJournal = Notification.Name("navigateToJournal")
   static let navigateToDaily = Notification.Name("navigateToDaily")
   static let navigateToWeekly = Notification.Name("navigateToWeekly")
   static let timelineDataUpdated = Notification.Name("timelineDataUpdated")

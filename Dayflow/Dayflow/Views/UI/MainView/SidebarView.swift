@@ -23,7 +23,6 @@ enum SidebarIcon: CaseIterable {
   case chat
   case flow
   case agents
-  case journal
   case bug
   case settings
 
@@ -35,7 +34,6 @@ enum SidebarIcon: CaseIterable {
     case .chat: return "ChatIcon"
     case .flow: return "FlowIcon"
     case .agents: return "AgentsIcon"
-    case .journal: return "JournalIcon"
     case .bug: return nil
     case .settings: return nil
     }
@@ -59,8 +57,7 @@ enum SidebarIcon: CaseIterable {
     case .chat: return "Chat"
     case .flow: return "Flow"
     case .agents: return "Agents"
-    case .journal: return "Journal"
-    case .bug: return "Report"
+    case .bug: return "Support"
     case .settings: return "Settings"
     }
   }
@@ -73,7 +70,6 @@ enum SidebarIcon: CaseIterable {
     case .chat: return "dashboard"
     case .flow: return "flow"
     case .agents: return "agents"
-    case .journal: return "journal"
     case .bug: return "bug_report"
     case .settings: return "settings"
     }
@@ -87,7 +83,6 @@ struct SidebarView: View {
 
   private var visibleIcons: [SidebarIcon] {
     SidebarIcon.allCases.filter { icon in
-      if icon == .journal { return false }
       if icon == .flow { return SidebarView.showsFlowTab(flowEnabled: authManager.flowEnabled) }
       return true
     }
@@ -115,8 +110,6 @@ struct SidebarView: View {
 
   private func shouldShowBadge(for icon: SidebarIcon) -> Bool {
     switch icon {
-    case .journal:
-      return badgeManager.hasPendingJournalReminder
     case .daily:
       return badgeManager.hasPendingDailyRecap
     default:

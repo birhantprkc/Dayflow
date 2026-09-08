@@ -16,9 +16,6 @@ final class NotificationBadgeManager: ObservableObject {
 
   static let shared = NotificationBadgeManager()
 
-  /// Whether there's a pending journal reminder the user hasn't acknowledged
-  @Published private(set) var hasPendingJournalReminder: Bool = false
-
   /// Whether there's a visible Daily badge the user hasn't acknowledged yet.
   @Published private(set) var hasPendingDailyRecap: Bool = false
 
@@ -36,18 +33,6 @@ final class NotificationBadgeManager: ObservableObject {
   }
 
   // MARK: - Public Methods
-
-  /// Shows the journal reminder badge in both the Dock and sidebar.
-  func showJournalBadge() {
-    hasPendingJournalReminder = true
-    refreshDockBadge()
-  }
-
-  /// Clears the journal reminder badge from both the Dock and sidebar.
-  func clearJournalBadge() {
-    hasPendingJournalReminder = false
-    refreshDockBadge()
-  }
 
   /// Tracks that a Daily recap is ready and shows its visible badge.
   func registerDailyRecapReady(forDay day: String) {
@@ -75,7 +60,7 @@ final class NotificationBadgeManager: ObservableObject {
   }
 
   private func refreshDockBadge() {
-    let hasPendingBadge = hasPendingJournalReminder || hasPendingDailyRecap
+    let hasPendingBadge = hasPendingDailyRecap
     NSApplication.shared.dockTile.badgeLabel = hasPendingBadge ? "1" : nil
   }
 

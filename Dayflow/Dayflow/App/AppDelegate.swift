@@ -11,7 +11,6 @@ import ServiceManagement
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
   enum PendingNotificationNavigationDestination: Equatable {
-    case journal
     case daily(day: String?)
     case weekly
   }
@@ -161,7 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Start inactivity monitoring for idle reset
     InactivityMonitor.shared.start()
 
-    // Start notification service for journal reminders
+    // Start Daily and Weekly notifications and retire legacy Journal reminders
     NotificationService.shared.start()
 
     // Start daily recap generation scheduler (checks every 5 minutes)

@@ -78,11 +78,6 @@ extension MainView {
           InactivityMonitor.shared.markHandledIfPending()
         }
       }
-      .onReceive(NotificationCenter.default.publisher(for: .navigateToJournal)) { _ in
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-          selectedIcon = .weekly
-        }
-      }
       .onReceive(NotificationCenter.default.publisher(for: .navigateToWeekly)) { _ in
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
           selectedIcon = .weekly
@@ -188,9 +183,7 @@ extension MainView {
 
   private func handleTabSelectionChange(_ newIcon: SidebarIcon) {
     // Clear tab-specific notification badges once the user visits the destination.
-    if newIcon == .journal {
-      NotificationBadgeManager.shared.clearJournalBadge()
-    } else if newIcon == .daily {
+    if newIcon == .daily {
       if !consumePendingDailyRecapOpenIfNeeded(source: "daily_tab_selected") {
         NotificationBadgeManager.shared.clearDailyBadge()
       }
