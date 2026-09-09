@@ -295,7 +295,9 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
         await self?.receive(String(decoding: data, as: UTF8.self), attempt: id)
       }
       process.waitUntilExit()
-      await self?.exited(attempt: id, status: process.terminationStatus)
+      await self?.exited(
+        attempt: id, status: process.terminationStatus,
+        reason: process.terminationReason == .uncaughtSignal ? "signal" : "exit")
     }
     timeout = Task { [weak self] in
       do { try await Task.sleep(for: .seconds(120)) } catch { return }
@@ -351,18 +353,29 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
     pendingOutput = String(pendingOutput.suffix(16000))
   }
 
-  private func exited(attempt id: UUID, status: Int32) {
+  private func exited(attempt id: UUID, status: Int32, reason: String) {
     guard id == attempt else { return }
     fail(
-      "AgentPlayback stopped.\n\n\(output.suffix(2000))",
-      category: status == 127 && version == nil ? .missingRuntime : .processExit)
+      "AgentPlayback stopped (\(reason) \(status)).\n\n\(output.suffix(2000))",
+      category: status == 127 && version == nil ? .missingRuntime : .processExit,
+      diagnostics: ["termination_status": Int(status), "termination_reason": reason])
   }
 
-  private func fail(_ message: String, category: FailureCategory) {
+  private func fail(
+    _ message: String, category: FailureCategory, diagnostics: [String: Any] = [:]
+  ) {
     var properties = launchProperties
+    properties.merge(diagnostics) { _, new in new }
+    properties["startup_stage"] =
+      pageLoaded
+      ? "page_loaded"
+      : (origin != nil ? "url_received" : (version != nil ? "package_resolved" : "shell_or_npx"))
+    properties["output_character_count"] = output.count
+    properties["login_shell"] = LoginShellRunner.userLoginShell.lastPathComponent
     properties["failure_category"] = category.rawValue
     properties["will_try_fallback"] =
       !isFallback && UserDefaults.standard.string(forKey: versionKey) != nil
+    AgentPlaybackDiagnostics.record(message: message, output: output, properties: properties)
     if launchStartedAt != nil {
       properties["outcome"] = "failure"
       AnalyticsService.shared.capture("agentplayback_launch_completed", properties)
