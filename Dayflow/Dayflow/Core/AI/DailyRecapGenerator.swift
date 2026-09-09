@@ -402,14 +402,38 @@ final class DailyRecapGenerator {
 
     let provider = CodexProvider()
     let prompt = Self.makeLocalPrompt(day: context.sourceDayString, cards: context.cards)
-    let (rawText, _) = try await provider.generateText(
-      prompt: prompt,
-      model: "gpt-5.4",
-      reasoningEffort: nil,
-      disableTools: true
-    )
-    let parsed = try Self.parseLocalResponse(rawText)
-    return try makeDraft(from: parsed, context: context, metadata: metadata)
+    func generate(model: String) async throws -> DailyStandupDraft {
+      try Task.checkCancellation()
+      let (rawText, _) = try await provider.generateText(
+        prompt: prompt,
+        model: model,
+        reasoningEffort: "low",
+        disableTools: true
+      )
+      try Task.checkCancellation()
+      let parsed = try Self.parseLocalResponse(rawText)
+      var actualMetadata = metadata
+      actualMetadata.modelOrTool = model
+      return try makeDraft(from: parsed, context: context, metadata: actualMetadata)
+    }
+
+    do {
+      return try await generate(model: "gpt-6-astra")
+    } catch {
+      if error is CancellationError { throw error }
+      try Task.checkCancellation()
+      AnalyticsService.shared.capture(
+        "llm_model_fallback",
+        [
+          "provider": "chat_cli",
+          "provider_id": LLMProviderID.chatGPT.rawValue,
+          "operation": "daily_recap",
+          "from_model": "gpt-6-astra",
+          "to_model": "gpt-5.6-sol",
+          "reason": "generation_failed",
+        ])
+      return try await generate(model: "gpt-5.6-sol")
+    }
   }
 
   private func generateWithClaude(
