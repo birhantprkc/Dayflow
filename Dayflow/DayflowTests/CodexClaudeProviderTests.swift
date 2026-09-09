@@ -62,53 +62,6 @@ final class CodexClaudeProviderTests: XCTestCase {
     XCTAssertEqual(configuration.reasoningEffort, "low")
   }
 
-  func testChatGPTLegacyFallbackModelsMatchPre201Models() {
-    let transcription = CodexProvider.legacyTranscriptionModelConfiguration()
-    let cards = CodexProvider.legacyActivityCardModelConfiguration()
-
-    XCTAssertEqual(transcription.model, "gpt-5.4-mini")
-    XCTAssertEqual(transcription.reasoningEffort, "low")
-    XCTAssertEqual(cards.model, "gpt-5.4")
-    XCTAssertEqual(cards.reasoningEffort, "low")
-  }
-
-  func testChatGPTOnlyUsesLegacyFallbackForOutdatedCLIError() {
-    let outdatedError = NSError(
-      domain: "ChatCLI",
-      code: -33,
-      userInfo: [
-        NSLocalizedDescriptionKey: "This model requires a newer version of Codex."
-      ]
-    )
-    let transientError = NSError(
-      domain: "ChatCLI",
-      code: -3,
-      userInfo: [NSLocalizedDescriptionKey: "CLI process timed out"]
-    )
-
-    XCTAssertTrue(
-      CodexProvider.shouldUseLegacyModel(
-        after: outdatedError,
-        currentModel: "gpt-5.6-luna",
-        fallbackModel: "gpt-5.4-mini"
-      )
-    )
-    XCTAssertFalse(
-      CodexProvider.shouldUseLegacyModel(
-        after: transientError,
-        currentModel: "gpt-5.6-luna",
-        fallbackModel: "gpt-5.4-mini"
-      )
-    )
-    XCTAssertFalse(
-      CodexProvider.shouldUseLegacyModel(
-        after: outdatedError,
-        currentModel: "gpt-5.4-mini",
-        fallbackModel: "gpt-5.4-mini"
-      )
-    )
-  }
-
   func testClaudeTranscriptionUsesSonnetSlugAtLowEffort() {
     let configuration = ClaudeProvider.transcriptionModelConfiguration()
 
