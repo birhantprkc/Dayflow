@@ -9,12 +9,6 @@ extension CodexProvider {
     return (model: "gpt-5.6-luna", reasoningEffort: "low")
   }
 
-  static func legacyTranscriptionModelConfiguration() -> (
-    model: String, reasoningEffort: String?
-  ) {
-    return (model: "gpt-5.4-mini", reasoningEffort: "low")
-  }
-
   func transcribeScreenshots(
     _ screenshots: [Screenshot], batchStartTime: Date, batchId: Int64?
   ) async throws -> (observations: [Observation], log: LLMCall) {
@@ -64,9 +58,8 @@ extension CodexProvider {
     }
 
     let modelConfiguration = Self.transcriptionModelConfiguration()
-    let legacyModelConfiguration = Self.legacyTranscriptionModelConfiguration()
-    var model = modelConfiguration.model
-    var effort = modelConfiguration.reasoningEffort
+    let model = modelConfiguration.model
+    let effort = modelConfiguration.reasoningEffort
 
     let basePrompt = buildScreenshotTranscriptionPrompt(
       numFrames: imagePaths.count,
@@ -77,28 +70,6 @@ extension CodexProvider {
     var actualPrompt = basePrompt
     var lastError: Error?
     var lastRun: ChatCLIRunResult?
-
-    func applyLegacyModelFallback(after error: Error) -> Bool {
-      guard
-        Self.shouldUseLegacyModel(
-          after: error,
-          currentModel: model,
-          fallbackModel: legacyModelConfiguration.model
-        )
-      else { return false }
-
-      captureLegacyModelFallback(
-        operation: "transcribe_screenshots",
-        fromModel: model,
-        toModel: legacyModelConfiguration.model,
-        batchId: batchId
-      )
-      model = legacyModelConfiguration.model
-      effort = legacyModelConfiguration.reasoningEffort
-      actualPrompt = basePrompt
-      print("[ChatCLI] Codex is outdated; retrying transcription with \(model)")
-      return true
-    }
 
     let maxTranscribeAttempts = 3
     for attempt in 1...maxTranscribeAttempts {
@@ -112,9 +83,6 @@ extension CodexProvider {
           segments = try parseSegments(from: run.stdout, stderr: run.stderr)
         } catch {
           lastError = error
-          if attempt < maxTranscribeAttempts, applyLegacyModelFallback(after: error) {
-            continue
-          }
           if attempt < maxTranscribeAttempts {
             print(
               "[ChatCLI] Screenshot transcribe attempt \(attempt) failed: \(error.localizedDescription) — retrying"
@@ -211,9 +179,6 @@ extension CodexProvider {
         }
       } catch {
         lastError = error
-        if attempt < maxTranscribeAttempts, applyLegacyModelFallback(after: error) {
-          continue
-        }
         if attempt < maxTranscribeAttempts {
           print(
             "[ChatCLI] Screenshot transcribe attempt \(attempt) failed: \(error.localizedDescription) — retrying"
