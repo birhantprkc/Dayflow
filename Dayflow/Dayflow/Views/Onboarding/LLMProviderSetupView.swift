@@ -510,7 +510,7 @@ struct LLMProviderSetupView: View {
                     engine: .custom,
                     buttonLabel: "Test endpoint",
                     basePlaceholder: OpenAICompatibleConfiguration.openRouterBaseURL,
-                    modelPlaceholder: "openai/gpt-5.4",
+                    modelPlaceholder: "openai/gpt-5.6-sol",
                     credentialStorageDescription:
                       "Stored safely in Keychain and sent only to this endpoint as a Bearer token.",
                     requiresMeaningfulResponse: true,
