@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The "Report" tab: an in-app support chat (PostHog Support) with email,
+/// The "Support" tab: an in-app support chat (PostHog Support) with email,
 /// Discord, and calendar links underneath for people who prefer those.
 struct BugReportView: View {
   @Environment(\.dayflowTheme) private var theme
