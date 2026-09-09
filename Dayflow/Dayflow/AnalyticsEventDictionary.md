@@ -93,10 +93,10 @@ This document lists manual events, properties, and code locations. All events re
 - agentplayback_launch_started
   - props: `mode: latest|cached_fallback`
 - agentplayback_launch_completed
-  - props: `mode: latest|cached_fallback`, `outcome: success|failure`, `duration_seconds: number`, `agentplayback_version?: string`, `failure_category?: preparation|process_launch|process_exit|missing_runtime|timeout|navigation|web_content_terminated`, `will_try_fallback?: bool`
+  - props: `mode: latest|cached_fallback`, `outcome: success|failure`, `duration_seconds: number`, `agentplayback_version?: string`, `failure_category?: preparation|process_launch|process_exit|missing_runtime|timeout|navigation|web_content_terminated`, `will_try_fallback?: bool`, failure diagnostics: `startup_stage`, `output_character_count`, `login_shell`, `termination_status?`, `termination_reason?`
   - one result per launch attempt; success means WebKit finished loading the dashboard, not that every historical scan finished; a recovered failure and fallback success remain separate attempts
 - agentplayback_runtime_failed
-  - props: `mode: latest|cached_fallback`, `agentplayback_version?: string`, `failure_category: preparation|process_launch|process_exit|missing_runtime|timeout|navigation|web_content_terminated`, `will_try_fallback: bool`
+  - props: `mode: latest|cached_fallback`, `agentplayback_version?: string`, `failure_category: preparation|process_launch|process_exit|missing_runtime|timeout|navigation|web_content_terminated`, `will_try_fallback: bool`, `startup_stage`, `output_character_count`, `login_shell`, `termination_status?`, `termination_reason?`
   - failures after the initial page load, separate from startup failures
 - agentplayback_retry_clicked
   - explicit click on Try again
