@@ -53,7 +53,7 @@ final class SystemAppearanceObserver: ObservableObject {
     }
   }
 
-  private static var currentColorScheme: ColorScheme {
+  static var currentColorScheme: ColorScheme {
     NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
       ? .dark : .light
   }
