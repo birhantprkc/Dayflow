@@ -16,6 +16,7 @@ enum GitHubStarPromptState {
 enum GitHubStarService {
   static func starDayflow() async -> Bool {
     await Task.detached(priority: .userInitiated) {
+      guard !GitHubStarPrompt.shouldUseBrowser else { return false }
       let result = LoginShellRunner.run(
         "gh api -X PUT user/starred/JerryZLiu/Dayflow",
         timeout: 15
