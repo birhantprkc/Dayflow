@@ -6,6 +6,7 @@
 //  so the What's New prompt can star in one click instead of opening a browser.
 //
 
+import AppKit
 import Foundation
 
 enum GitHubStarStatus: String {
@@ -19,8 +20,8 @@ enum GitHubStarStatus: String {
 /// "gh but logged out" from "already starred".
 struct GitHubStarCheck {
   let status: GitHubStarStatus
-  let ghInstalled: Bool
-  let ghAuthenticated: Bool
+  let ghInstalled: Bool?
+  let ghAuthenticated: Bool?
   /// Repo short name ("Dayflow") to whether it's starred. Empty when gh is unusable.
   let starredByRepo: [String: Bool]
   let durationMs: Int
@@ -28,10 +29,10 @@ struct GitHubStarCheck {
   var analyticsProperties: [String: Any] {
     var props: [String: Any] = [
       "gh_status": status.rawValue,
-      "gh_installed": ghInstalled,
-      "gh_authenticated": ghAuthenticated,
       "check_duration_ms": durationMs,
     ]
+    if let ghInstalled { props["gh_installed"] = ghInstalled }
+    if let ghAuthenticated { props["gh_authenticated"] = ghAuthenticated }
     for (repo, starred) in starredByRepo {
       props["\(repo.lowercased())_starred"] = starred
     }
@@ -68,11 +69,21 @@ enum GitHubStarPrompt {
   /// Every repo a one-click star applies to.
   private static let repos = [primaryRepo, "JerryZLiu/AgentPlayback"]
 
+  /// Users reported 1Password authorization prompts when What's New checked GitHub stars.
+  /// Our interactive login shell loads their configuration, which can wrap gh with 1Password.
+  /// Conservatively use the browser whenever 1Password is installed: detecting only the shell
+  /// integration could itself trigger a prompt. This app lookup launches neither app nor shell.
+  static var shouldUseBrowser: Bool {
+    ["com.1password.1password", "com.agilebits.onepassword7"].contains {
+      NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil
+    }
+  }
+
   /// Starred only when every repo is starred. Blocks on shell calls, so run it off the main thread.
   static func check() -> GitHubStarCheck {
     let start = Date()
     func finish(
-      _ status: GitHubStarStatus, installed: Bool, authenticated: Bool, starred: [String: Bool]
+      _ status: GitHubStarStatus, installed: Bool?, authenticated: Bool?, starred: [String: Bool]
     ) -> GitHubStarCheck {
       GitHubStarCheck(
         status: status,
@@ -81,6 +92,10 @@ enum GitHubStarPrompt {
         starredByRepo: starred,
         durationMs: Int(Date().timeIntervalSince(start) * 1000)
       )
+    }
+
+    guard !shouldUseBrowser else {
+      return finish(.unavailable, installed: nil, authenticated: nil, starred: [:])
     }
 
     guard LoginShellRunner.run("gh --version", timeout: 10).exitCode == 0 else {
@@ -111,6 +126,9 @@ enum GitHubStarPrompt {
 
   /// Stars every repo and reports which ones took.
   static func starAll() -> GitHubStarResult {
+    guard !shouldUseBrowser else {
+      return GitHubStarResult(starredByRepo: [:], durationMs: 0)
+    }
     let start = Date()
     var starred: [String: Bool] = [:]
     for repo in repos {
