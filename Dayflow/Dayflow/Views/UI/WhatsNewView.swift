@@ -97,17 +97,16 @@ enum WhatsNewConfiguration {
   private static let seenKey = "lastSeenWhatsNewVersion"
 
   /// Override with the specific release number you want to show.
-  private static let versionOverride: String? = "2.2.0"
+  private static let versionOverride: String? = "2.3.0"
 
   /// Update this content before shipping each release. Return nil to disable the modal entirely.
   static var configuredRelease: ReleaseNote? {
     ReleaseNote(
       version: targetVersion,
-      title: "Recordings are now 30x more efficient",
+      title: "A fresh look, light and dark + a new view for your agents",
       highlights: [
-        "Recordings are 30x more space efficient with no loss in quality. Expect roughly 10 MB per hour at 1080p or 5 MB per hour at 720p.",
-        "New recording quality controls in Settings → Storage. Pick 720p or 1080p and how often frames are captured, and see the estimated disk usage before you commit.",
-        "The Report tab now opens a live support chat, so you can send logs and get a reply without leaving the app.",
+        "We’re giving Dayflow’s UI a light refresh, including a much-requested feature: dark mode! It follows your system preference, but you can also choose light or dark manually in Settings → Other.",
+        "The Agents tab now brings your Codex and Claude Code sessions into Dayflow, with a timeline, token usage, and estimated API costs.",
       ],
       socialPreview: nil,
       previewIntro: nil,
@@ -703,7 +702,7 @@ struct WhatsNewView: View {
   /// Hidden once we know the user already starred the repo; nothing to ask for.
   @ViewBuilder
   private func githubStarSection(_ prompt: ReleaseNoteGitHubStar) -> some View {
-    if githubStarState != .checking {
+    if githubStarState != .checking && githubStarState != .starred {
       VStack(alignment: .leading, spacing: 16) {
         HStack(alignment: .top, spacing: 14) {
           Image(systemName: "star.fill")
@@ -772,7 +771,9 @@ struct WhatsNewView: View {
       GitHubStarPrompt.check()
     }.value
 
-    switch check.status {
+    let status: GitHubStarStatus =
+      check.starredByRepo[GitHubStarPrompt.primaryRepoName] == true ? .starred : check.status
+    switch status {
     case .starred:
       githubStarState = .starred
       githubStarOutcome = "already_starred"
@@ -786,7 +787,7 @@ struct WhatsNewView: View {
 
     var props = check.analyticsProperties
     props["version"] = releaseNote.version
-    props["prompt_shown"] = check.status != .starred
+    props["prompt_shown"] = status != .starred
     props["provider_label"] = currentProviderLabel
     AnalyticsService.shared.capture("whats_new_github_star_checked", props)
   }
