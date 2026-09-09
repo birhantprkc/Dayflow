@@ -19,6 +19,15 @@ final class NotificationBadgeManager: ObservableObject {
   /// Whether there's a visible Daily badge the user hasn't acknowledged yet.
   @Published private(set) var hasPendingDailyRecap: Bool = false
 
+  @Published private(set) var supportUnreadCount = UserDefaults.standard.integer(
+    forKey: "support.unreadCount")
+
+  func setSupportUnreadCount(_ count: Int) {
+    supportUnreadCount = count
+    defaults.set(count, forKey: "support.unreadCount")
+    refreshDockBadge()
+  }
+
   private let defaults = UserDefaults.standard
   private let pendingDailyReadyKey = "notificationBadge.pendingDailyReady"
   private let pendingDailyVisibleKey = "notificationBadge.pendingDailyVisible"
@@ -60,8 +69,8 @@ final class NotificationBadgeManager: ObservableObject {
   }
 
   private func refreshDockBadge() {
-    let hasPendingBadge = hasPendingDailyRecap
-    NSApplication.shared.dockTile.badgeLabel = hasPendingBadge ? "1" : nil
+    let count = supportUnreadCount + (hasPendingDailyRecap ? 1 : 0)
+    NSApplication.shared.dockTile.badgeLabel = count > 0 ? String(count) : nil
   }
 
   private func clearPendingDailyRecap() {
