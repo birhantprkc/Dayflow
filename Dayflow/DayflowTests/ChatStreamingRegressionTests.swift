@@ -12,7 +12,8 @@ final class ChatStreamingRegressionTests: XCTestCase {
   }
 
   func testCodexReportsStructuredFailureInsteadOfStdinNotice() throws {
-    let detail = "The 'gpt-5.4' model is not supported when using Codex with a ChatGPT account."
+    let detail =
+      "The 'unavailable-model' model is not supported when using Codex with a ChatGPT account."
     let nested = String(
       decoding: try JSONSerialization.data(withJSONObject: [
         "type": "error", "error": ["message": detail],
