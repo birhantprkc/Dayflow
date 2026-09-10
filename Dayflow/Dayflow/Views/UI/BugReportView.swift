@@ -58,8 +58,10 @@ struct BugReportView: View {
     .padding(.bottom, 28)
     .padding(.horizontal, 48)
     .onAppear {
+      SupportChatSession.shared.setVisible(true)
       AnalyticsService.shared.screen("support_chat")
     }
+    .onDisappear { SupportChatSession.shared.setVisible(false) }
   }
 
   // MARK: Chat
