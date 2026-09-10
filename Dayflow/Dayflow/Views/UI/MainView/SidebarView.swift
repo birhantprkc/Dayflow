@@ -110,6 +110,8 @@ struct SidebarView: View {
 
   private func shouldShowBadge(for icon: SidebarIcon) -> Bool {
     switch icon {
+    case .bug:
+      return badgeManager.supportUnreadCount > 0
     case .daily:
       return badgeManager.hasPendingDailyRecap
     default:
