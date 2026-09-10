@@ -106,6 +106,9 @@ struct MainView: View {
 
   var body: some View {
     mainLayout
+      .onReceive(NotificationCenter.default.publisher(for: .navigateToSupport)) { _ in
+        selectedIcon = .bug
+      }
       .onReceive(NotificationCenter.default.publisher(for: .navigateToDaily)) { notification in
         let wasAlreadyOnDaily = selectedIcon == .daily
         if let dayString = notification.userInfo?["day"] as? String,
