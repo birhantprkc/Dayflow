@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   enum PendingNotificationNavigationDestination: Equatable {
     case daily(day: String?)
     case weekly
+    case support
   }
 
   // Controls whether the app is allowed to terminate.
@@ -162,6 +163,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Start Daily and Weekly notifications and retire legacy Journal reminders
     NotificationService.shared.start()
+    SupportChatSession.shared.start()
 
     // Start daily recap generation scheduler (checks every 5 minutes)
     DailyRecapScheduler.shared.start()
@@ -357,6 +359,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       AgentUsageTelemetryQueue.drain()
     }
     var props: [String: Any] = [:]
+    let appearance =
+      DayflowAppearance(
+        rawValue: UserDefaults.standard.string(forKey: DayflowAppearance.storageKey) ?? ""
+      ) ?? .system
+    // Match the app root, including onboarding's forced light appearance.
+    let effectiveColorScheme =
+      UserDefaults.standard.bool(forKey: "didOnboard")
+      ? appearance.colorScheme(system: SystemAppearanceObserver.currentColorScheme) : .light
+    props["appearance"] = appearance.rawValue
+    props["effective_appearance"] = effectiveColorScheme == .dark ? "dark" : "light"
     if let launch = appLaunchDate {
       let sessionHours = Date().timeIntervalSince(launch) / 3600
       props["session_hours"] = round(sessionHours * 10) / 10  // 1 decimal place

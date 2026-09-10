@@ -41,6 +41,34 @@ final class NotificationService: NSObject, ObservableObject {
     }
   }
 
+  func clearSupportReplyNotification() {
+    center.removeDeliveredNotifications(withIdentifiers: ["support.reply"])
+    center.removePendingNotificationRequests(withIdentifiers: ["support.reply"])
+  }
+
+  func notifySupportReply() {
+    Task {
+      var status = await authorizationStatus()
+      if status == .notDetermined {
+        await requestPermission()
+        status = await authorizationStatus()
+      }
+      guard Self.canScheduleNotifications(for: status),
+        NotificationBadgeManager.shared.supportUnreadCount > 0
+      else { return }
+      let content = UNMutableNotificationContent()
+      content.title = "New reply from Dayflow"
+      content.body = "You have a new support reply. Open Support to read it."
+      content.sound = .default
+      do {
+        try await center.add(
+          UNNotificationRequest(identifier: "support.reply", content: content, trigger: nil))
+      } catch {
+        print("[NotificationService] Support notification failed: \(error)")
+      }
+    }
+  }
+
   /// Request notification permission from the user
   @discardableResult
   func requestPermission() async -> Bool {
@@ -340,13 +368,17 @@ extension NotificationService: UNUserNotificationCenterDelegate {
     let isDailyRecapNotification = identifier.hasPrefix("daily.")
     let isWeeklyUnlockNotification = identifier.hasPrefix("weekly.")
 
-    guard isDailyRecapNotification || isWeeklyUnlockNotification else {
+    let isSupportNotification = identifier.hasPrefix("support.")
+    guard isDailyRecapNotification || isWeeklyUnlockNotification || isSupportNotification else {
       completionHandler()
       return
     }
 
     Task { @MainActor in
-      if isDailyRecapNotification {
+      if isSupportNotification {
+        AppDelegate.pendingNotificationNavigationDestination = .support
+        activateAppForNotificationTap()
+      } else if isDailyRecapNotification {
         AppDelegate.pendingNotificationNavigationDestination = .daily(day: day)
 
         if let day, !day.isEmpty {
@@ -391,6 +423,11 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 
     if identifier.hasPrefix("daily.") {
       print("[NotificationService] willPresent options=banner,sound identifier=\(identifier)")
+      completionHandler([.banner, .sound])
+      return
+    }
+
+    if identifier.hasPrefix("support.") {
       completionHandler([.banner, .sound])
       return
     }

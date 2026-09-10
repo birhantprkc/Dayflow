@@ -366,6 +366,8 @@ struct DayflowApp: App {
         )
       case .daily:
         NotificationCenter.default.post(name: .navigateToDaily, object: nil)
+      case .support:
+        NotificationCenter.default.post(name: .navigateToSupport, object: nil)
       case .weekly:
         NotificationCenter.default.post(name: .navigateToWeekly, object: nil)
       }
@@ -379,6 +381,7 @@ extension Notification.Name {
   static let analyticsPreferenceChanged = Notification.Name("analyticsPreferenceChanged")
   static let showWhatsNew = Notification.Name("showWhatsNew")
   static let navigateToDaily = Notification.Name("navigateToDaily")
+  static let navigateToSupport = Notification.Name("navigateToSupport")
   static let navigateToWeekly = Notification.Name("navigateToWeekly")
   static let timelineDataUpdated = Notification.Name("timelineDataUpdated")
   static let showTimelineFailureToast = Notification.Name("showTimelineFailureToast")

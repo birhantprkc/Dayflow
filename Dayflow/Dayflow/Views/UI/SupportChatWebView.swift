@@ -61,6 +61,73 @@ struct SupportChatPalette: Equatable {
   }
 }
 
+/// Retains the widget session so replies are checked even when Support is closed.
+@MainActor
+final class SupportChatSession {
+  static let shared = SupportChatSession()
+  let coordinator = SupportChatWebView.Coordinator(onEvent: { _ in })
+  lazy var webView = SupportChatWebView.makeWebView(coordinator: coordinator)
+  private var timer: Timer?
+  private var supportVisible = false
+  private var ready = false
+  private let defaults = UserDefaults.standard
+
+  func start() {
+    guard timer == nil else { return }
+    _ = webView
+    timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+      Task { @MainActor in
+        let session = SupportChatSession.shared
+        if session.ready {
+          session.updateReading()
+        } else {
+          session.webView.loadHTMLString(
+            SupportChatPage.html, baseURL: URL(string: "https://www.dayflow.so/support-chat"))
+        }
+      }
+    }
+    for name in [
+      NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification,
+    ] {
+      NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+        Task { @MainActor in SupportChatSession.shared.updateReading() }
+      }
+    }
+  }
+
+  func setVisible(_ visible: Bool) {
+    supportVisible = visible
+    updateReading()
+  }
+
+  func didBecomeReady() {
+    ready = true
+    updateReading()
+  }
+
+  func didBecomeUnavailable() {
+    ready = false
+  }
+
+  private func updateReading() {
+    let windowVisible = webView.window.map { $0.isVisible && !$0.isMiniaturized } ?? false
+    coordinator.send("setReading", supportVisible && NSApp.isActive && windowVisible)
+  }
+
+  func receiveReplies(_ body: [String: Any]) {
+    let unread = max(0, body["unread"] as? Int ?? 0)
+    NotificationBadgeManager.shared.setSupportUnreadCount(unread)
+    guard unread > 0, let latestID = body["latestID"] as? String, !latestID.isEmpty else {
+      if unread == 0 { NotificationService.shared.clearSupportReplyNotification() }
+      return
+    }
+    let key = "support.lastNotifiedReply"
+    guard defaults.string(forKey: key) != latestID else { return }
+    defaults.set(latestID, forKey: key)
+    NotificationService.shared.notifySupportReply()
+  }
+}
+
 // MARK: - View
 
 struct SupportChatWebView: NSViewRepresentable {
@@ -73,30 +140,35 @@ struct SupportChatWebView: NSViewRepresentable {
   let onEvent: (Event) -> Void
 
   func makeCoordinator() -> Coordinator {
-    Coordinator(onEvent: onEvent)
+    SupportChatSession.shared.coordinator.onEvent = onEvent
+    return SupportChatSession.shared.coordinator
   }
 
   func makeNSView(context: Context) -> WKWebView {
+    SupportChatSession.shared.webView
+  }
+
+  static func makeWebView(coordinator: Coordinator) -> WKWebView {
     let configuration = WKWebViewConfiguration()
-    configuration.userContentController.add(context.coordinator, name: "support")
+    configuration.userContentController.add(coordinator, name: "support")
     configuration.userContentController.addUserScript(
       WKUserScript(
-        source: Self.configScript(palette: palette),
+        source: Self.configScript(palette: .light),
         injectionTime: .atDocumentStart,
         forMainFrameOnly: true
       )
     )
 
     let webView = WKWebView(frame: .zero, configuration: configuration)
-    webView.navigationDelegate = context.coordinator
-    webView.uiDelegate = context.coordinator
+    webView.navigationDelegate = coordinator
+    webView.uiDelegate = coordinator
     webView.setValue(false, forKey: "drawsBackground")
     #if DEBUG
       webView.isInspectable = true
     #endif
 
-    context.coordinator.webView = webView
-    context.coordinator.lastPalette = palette
+    coordinator.webView = webView
+    coordinator.lastPalette = .light
     // A real https origin so posthog-js gets working localStorage for ticket persistence.
     webView.loadHTMLString(
       SupportChatPage.html, baseURL: URL(string: "https://www.dayflow.so/support-chat"))
@@ -110,9 +182,7 @@ struct SupportChatWebView: NSViewRepresentable {
   }
 
   static func dismantleNSView(_ nsView: WKWebView, coordinator: Coordinator) {
-    nsView.configuration.userContentController.removeScriptMessageHandler(forName: "support")
-    nsView.navigationDelegate = nil
-    nsView.uiDelegate = nil
+    coordinator.onEvent = { _ in }
   }
 
   /// Everything the page needs before posthog-js loads: keys, distinct ID, and theme.
@@ -137,7 +207,7 @@ struct SupportChatWebView: NSViewRepresentable {
 
   @MainActor
   final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
-    private let onEvent: (Event) -> Void
+    var onEvent: (Event) -> Void
     weak var webView: WKWebView?
     var lastPalette: SupportChatPalette?
 
@@ -164,14 +234,20 @@ struct SupportChatWebView: NSViewRepresentable {
     private func handle(event: String, body: [String: Any]) {
       switch event {
       case "ready":
+        SupportChatSession.shared.didBecomeReady()
         onEvent(.ready)
 
       case "unavailable":
+        SupportChatSession.shared.didBecomeUnavailable()
         let reason = body["reason"] as? String ?? "unknown"
         AnalyticsService.shared.capture("support_chat_unavailable", ["reason": reason])
         onEvent(.unavailable(reason: reason))
 
+      case "replies":
+        SupportChatSession.shared.receiveReplies(body)
+
       case "sent":
+        Task { await NotificationService.shared.requestPermission() }
         AnalyticsService.shared.capture(
           "support_message_sent",
           [
@@ -216,6 +292,12 @@ struct SupportChatWebView: NSViewRepresentable {
       )
     }
 
+    nonisolated func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+      Task { @MainActor in
+        SupportChatSession.shared.didBecomeUnavailable()
+      }
+    }
+
     // MARK: Navigation
 
     // Any link inside the page opens in the real browser.
@@ -255,6 +337,7 @@ struct SupportChatWebView: NSViewRepresentable {
       withError error: Error
     ) {
       Task { @MainActor in
+        SupportChatSession.shared.didBecomeUnavailable()
         self.onEvent(.unavailable(reason: "load_failed"))
       }
     }
@@ -263,6 +346,7 @@ struct SupportChatWebView: NSViewRepresentable {
       _ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error
     ) {
       Task { @MainActor in
+        SupportChatSession.shared.didBecomeUnavailable()
         self.onEvent(.unavailable(reason: "load_failed"))
       }
     }
@@ -423,14 +507,14 @@ private enum SupportChatPage {
       // Logs travel as a PostHog event on the same person, not inside the message,
       // so the ticket thread stays readable. Event properties allow ~1MB; stay well under.
       var DEBUG_LOG_LIMIT = 200000;
-      var POLL_MS = 5000;
+      var reading = false;
+      var loadingMessages = false;
 
       var state = {
         available: false,
         sending: false,
         rendered: {},           // message id -> true
-        pendingDebugLog: null,  // resolver waiting on native
-        pollTimer: null
+        pendingDebugLog: null   // resolver waiting on native
       };
 
       // ---- Theme -------------------------------------------------------------
@@ -632,7 +716,8 @@ private enum SupportChatPage {
       // ---- Loading history + polling for replies -----------------------------
 
       async function loadMessages() {
-        if (!posthog.conversations.getCurrentTicketId()) return;
+        if (loadingMessages || !state.available || !posthog.conversations.getCurrentTicketId()) return;
+        loadingMessages = true;
         try {
           var response = await posthog.conversations.getMessages();
           if (!response) return;
@@ -641,16 +726,22 @@ private enum SupportChatPage {
             .filter(function (m) { return !m.is_private; })
             .sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); })
             .forEach(appendMessage);
-          if (hadUnread) posthog.conversations.markAsRead();
-        } catch (e) {}
+          var replies = response.messages.filter(function (m) {
+            return !m.is_private && m.author_type !== "customer";
+          }).sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); });
+          var latest = replies[replies.length - 1];
+          var unread = response.unread_count;
+          if (reading && hadUnread) {
+            var receipt = await posthog.conversations.markAsRead();
+            if (receipt && receipt.success) unread = 0;
+          }
+          native({ event: "replies", unread: unread,
+            latestID: latest ? String(latest.id) : "" });
+        } catch (e) {} finally { loadingMessages = false; }
       }
 
       function startPolling() {
-        if (state.pollTimer) return;
-        state.pollTimer = setInterval(function () {
-          if (document.hidden) return;
-          loadMessages();
-        }, POLL_MS);
+        loadMessages();
       }
 
       // ---- Boot --------------------------------------------------------------
@@ -680,6 +771,8 @@ private enum SupportChatPage {
       }
 
       window.__dayflowSupport = {
+        poll: loadMessages,
+        setReading: function (value) { reading = value; loadMessages(); },
         receiveDebugLog: receiveDebugLog,
         applyPalette: applyPalette
       };
