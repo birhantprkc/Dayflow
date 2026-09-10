@@ -16,6 +16,7 @@ This document lists manual events, properties, and code locations. All events re
   - props: `from_version: string`, `to_version: string`
   - file: App/AppDelegate.swift
 - app_heartbeat
+  - appearance props: `appearance: system|light|dark` (saved preference, defaults to system), `effective_appearance: light|dark` (resolved at each heartbeat, including forced light during onboarding). Sent on startup and hourly; use each person's latest heartbeat for a user split rather than counting events.
   - props: `session_hours: number`, `cpu_current_pct_bucket?: 0-5%|5-20%|20-50%|50-100%|100-150%|150-200%|>200%`, `cpu_avg_pct_bucket?: 0-5%|5-20%|20-50%|50-100%|100-150%|150-200%|>200%`, `cpu_peak_pct_bucket?: 0-5%|5-20%|20-50%|50-100%|100-150%|150-200%|>200%`, `cpu_sample_count?: int`, `cpu_sampler_interval_s?: int`, `current_tab?: timeline|daily|weekly|dashboard|journal|bug_report|settings`, `timeline_mode?: day|week`
   - file: App/AppDelegate.swift
 - app_cpu_spike
