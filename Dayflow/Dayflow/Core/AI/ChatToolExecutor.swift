@@ -34,8 +34,8 @@ enum ChatTool: String, Codable, CaseIterable {
 
   var displayName: String {
     switch self {
-    case .fetchTimeline: return "Fetching timeline"
-    case .fetchObservations: return "Fetching observations"
+    case .fetchTimeline: return String(localized: "Fetching timeline")
+    case .fetchObservations: return String(localized: "Fetching observations")
     }
   }
 }
