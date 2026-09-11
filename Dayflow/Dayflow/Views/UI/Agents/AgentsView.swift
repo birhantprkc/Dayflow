@@ -177,7 +177,7 @@ struct AgentsView: View {
       .multilineTextAlignment(.center)
       .frame(maxWidth: 420)
 
-      generateButton(title: "Generate today's recap")
+      generateButton(title: String(localized: "Generate today's recap"))
         .padding(.top, 10)
 
       Text("Runs only when you ask — nothing happens automatically.")
@@ -225,7 +225,7 @@ struct AgentsView: View {
       }
       .frame(maxWidth: 460, maxHeight: 120)
 
-      generateButton(title: "Try again")
+      generateButton(title: String(localized: "Try again"))
         .padding(.top, 4)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
