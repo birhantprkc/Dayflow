@@ -54,8 +54,10 @@ struct WeekTimelineActivityCard: View {
   }
 
   private var displayTitle: String {
-    guard isFailedCard, failureCount > 1 else { return title }
-    return "\(title) · \(failureCount) intervals"
+    guard isFailedCard else { return title }
+    let failedTitle = String(localized: "Processing failed")
+    guard failureCount > 1 else { return failedTitle }
+    return String(localized: "\(failedTitle) · \(failureCount) intervals")
   }
 
   // Title font size is a single constant across every card in the grid — no
