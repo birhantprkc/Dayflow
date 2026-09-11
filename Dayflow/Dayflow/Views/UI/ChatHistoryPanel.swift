@@ -119,10 +119,10 @@ struct ChatHistoryPanel: View {
     }
 
     return [
-      ConversationGroup(title: "TODAY", conversations: today),
-      ConversationGroup(title: "YESTERDAY", conversations: yesterday),
-      ConversationGroup(title: "THIS WEEK", conversations: thisWeek),
-      ConversationGroup(title: "EARLIER", conversations: earlier),
+      ConversationGroup(title: String(localized: "TODAY"), conversations: today),
+      ConversationGroup(title: String(localized: "YESTERDAY"), conversations: yesterday),
+      ConversationGroup(title: String(localized: "THIS WEEK"), conversations: thisWeek),
+      ConversationGroup(title: String(localized: "EARLIER"), conversations: earlier),
     ].filter { !$0.conversations.isEmpty }
   }
 }
@@ -140,13 +140,14 @@ private struct ChatHistoryRow: View {
 
   private static let timeFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateFormat = "h:mm a"
+    formatter.timeStyle = .short
+    formatter.dateStyle = .none
     return formatter
   }()
 
   private static let dayFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateFormat = "MMM d"
+    formatter.setLocalizedDateFormatFromTemplate("MMMd")
     return formatter
   }()
 
@@ -164,7 +165,7 @@ private struct ChatHistoryRow: View {
     case .codex: providerLabel = "Codex"
     case .claude: providerLabel = "Claude"
     }
-    return "\(time) · \(providerLabel)"
+    return String(localized: "\(time) · \(providerLabel)")
   }
 
   var body: some View {
