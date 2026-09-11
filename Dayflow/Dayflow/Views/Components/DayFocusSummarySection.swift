@@ -52,7 +52,7 @@ struct DayFocusSummarySection: View {
         DayCategorySelectionEditor(
           categories: categories,
           selectedCategoryIDs: selectedCategoryIDs,
-          helperText: "Pick the categories that count towards Focus",
+          helperText: String(localized: "Pick the categories that count towards Focus"),
           onToggle: onToggleCategory,
           onDone: onDoneEditing
         )
