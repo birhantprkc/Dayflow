@@ -1,17 +1,17 @@
 import Foundation
 
+/// Builds the plain-text and Markdown exports of the timeline. Labels, headings
+/// and dates are localized; card titles, summaries and the stored "h:mm a" card
+/// times are copied through exactly as stored.
 struct TimelineClipboardFormatter {
   static func makeClipboardText(for date: Date, cards: [TimelineCard], now: Date = Date()) -> String
   {
     let timelineDate = timelineDisplayDate(from: date, now: now)
-    let header = "Dayflow timeline · \(formattedTimelineDay(timelineDate, now: now))"
+    let header = exportHeader(formattedTimelineDay(timelineDate, now: now))
 
     guard !cards.isEmpty else {
-      return """
-        \(header)
-
-        No timeline activities were recorded for this day.
-        """
+      return [header, String(localized: "No timeline activities were recorded for this day.")]
+        .joined(separator: "\n\n")
     }
 
     let entries = cards.enumerated().map { index, card in
@@ -26,14 +26,11 @@ struct TimelineClipboardFormatter {
     cards: [TimelineCard],
     now: Date = Date()
   ) -> String {
-    let header = "Dayflow timeline · \(weekRange.title)"
+    let header = exportHeader(weekRange.title)
 
     guard !cards.isEmpty else {
-      return """
-        \(header)
-
-        No timeline activities were recorded for this week.
-        """
+      return [header, String(localized: "No timeline activities were recorded for this week.")]
+        .joined(separator: "\n\n")
     }
 
     let cardsByDay = Dictionary(grouping: cards, by: \.day)
@@ -54,15 +51,15 @@ struct TimelineClipboardFormatter {
 
   static func makeMarkdown(for date: Date, cards: [TimelineCard], now: Date = Date()) -> String {
     let timelineDate = timelineDisplayDate(from: date, now: now)
-    let header = "## Dayflow timeline · \(formattedTimelineDay(timelineDate, now: now))"
+    let header = "## " + exportHeader(formattedTimelineDay(timelineDate, now: now))
 
     guard !cards.isEmpty else {
-      return """
-        \(header)
-
-        _No timeline activities were recorded for this day._
-        """
+      let emptyMessage = String(localized: "No timeline activities were recorded for this day.")
+      return [header, "_\(emptyMessage)_"].joined(separator: "\n\n")
     }
+
+    let summaryLabel = String(localized: "Summary")
+    let detailsLabel = String(localized: "Details")
 
     let entries = cards.enumerated().map { index, card -> String in
       var lines: [String] = []
@@ -80,9 +77,9 @@ struct TimelineClipboardFormatter {
       if let summary = cleanedParagraph(card.summary) {
         let summaryLines = normalizedLines(summary)
         if summaryLines.count == 1 {
-          lines.append("   - Summary: \(summaryLines[0])")
+          lines.append("   - \(summaryLabel): \(summaryLines[0])")
         } else {
-          lines.append("   - Summary:")
+          lines.append("   - \(summaryLabel):")
           summaryLines.forEach { lines.append("      \($0)") }
         }
       }
@@ -92,9 +89,9 @@ struct TimelineClipboardFormatter {
       {
         let detailLines = normalizedLines(details)
         if detailLines.count == 1 {
-          lines.append("   - Details: \(detailLines[0])")
+          lines.append("   - \(detailsLabel): \(detailLines[0])")
         } else {
-          lines.append("   - Details:")
+          lines.append("   - \(detailsLabel):")
           detailLines.forEach { lines.append("      \($0)") }
         }
       }
@@ -103,6 +100,15 @@ struct TimelineClipboardFormatter {
     }
 
     return ([header, ""] + entries).joined(separator: "\n\n")
+  }
+
+  /// "Dayflow timeline · <day or week>" in the current language.
+  private static func exportHeader(_ period: String) -> String {
+    String(
+      localized: "Dayflow timeline · \(period)",
+      comment:
+        "First line of the copied/exported timeline. The argument is a formatted day or week range."
+    )
   }
 
   private static func formattedRange(start: String, end: String) -> String {
@@ -155,18 +161,28 @@ struct TimelineClipboardFormatter {
       .filter { !$0.isEmpty }
   }
 
+  /// Abbreviated month and day, e.g. "Sep 11" / "11. Sept." / "9月11日".
+  private static let todayDayFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.setLocalizedDateFormatFromTemplate("MMMd")
+    return formatter
+  }()
+
+  /// Full weekday plus abbreviated month and day, e.g. "Thursday, Sep 11".
+  private static let otherDayFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.setLocalizedDateFormatFromTemplate("EEEEMMMd")
+    return formatter
+  }()
+
   private static func formattedTimelineDay(_ date: Date, now: Date) -> String {
     let calendar = Calendar.current
     let timelineToday = timelineDisplayDate(from: now, now: now)
-    let formatter = DateFormatter()
 
     if calendar.isDate(date, inSameDayAs: timelineToday) {
-      formatter.dateFormat = "'Today,' MMM d"
-    } else {
-      formatter.dateFormat = "EEEE, MMM d"
+      return String(localized: "Today, \(todayDayFormatter.string(from: date))")
     }
-
-    return formatter.string(from: date)
+    return otherDayFormatter.string(from: date)
   }
 
   private static func textEntry(for card: TimelineCard, index: Int) -> String {
@@ -183,13 +199,13 @@ struct TimelineClipboardFormatter {
     }
 
     if let summary = cleanedParagraph(card.summary) {
-      lines.append(block(label: "Summary", text: summary))
+      lines.append(block(label: String(localized: "Summary"), text: summary))
     }
 
     if let details = cleanedParagraph(card.detailedSummary),
       details != cleanedParagraph(card.summary)
     {
-      lines.append(block(label: "Details", text: details))
+      lines.append(block(label: String(localized: "Details"), text: details))
     }
 
     return lines.joined(separator: "\n")
@@ -224,6 +240,7 @@ struct TimelineClipboardFormatter {
     )
   }
 
+  /// Parser for the stored English "h:mm a" card times. Not a display formatter.
   private static let timeFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "h:mm a"
