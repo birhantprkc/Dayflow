@@ -127,12 +127,13 @@ extension DailyView {
   func workflowSection(scale: CGFloat, isViewingToday: Bool) -> some View {
     let headingText: String
     if isViewingToday {
-      headingText = "Today so far. Come back tomorrow for the full day view."
+      headingText = String(localized: "Today so far. Come back tomorrow for the full day view.")
     } else if isYesterdaySelection(selectedDate) {
-      headingText = "Your workflow yesterday"
+      headingText = String(localized: "Your workflow yesterday")
     } else {
       let displayDate = timelineDisplayDate(from: selectedDate)
-      headingText = "Your workflow on \(dailyStandupSectionDayFormatter.string(from: displayDate))"
+      headingText = String(
+        localized: "Your workflow on \(dailyStandupSectionDayFormatter.string(from: displayDate))")
     }
 
     return VStack(alignment: .leading, spacing: 8 * scale) {
@@ -267,8 +268,8 @@ extension DailyView {
       if workflowTotals.isEmpty {
         let emptyDescription =
           isViewingToday
-          ? "\(totalTitle)  No captured activity yet."
-          : "\(totalTitle)  No captured activity during 9am-9pm"
+          ? String(localized: "\(totalTitle)  No captured activity yet.")
+          : String(localized: "\(totalTitle)  No captured activity during 9am-9pm")
         Text(emptyDescription)
           .font(.custom("Figtree-Regular", size: 12 * scale))
           .foregroundStyle(theme.textSecondary)
@@ -413,20 +414,21 @@ extension DailyView {
     let displayDate = timelineDisplayDate(from: date)
     let timelineToday = timelineDisplayDate(from: Date())
     if Calendar.current.isDate(displayDate, inSameDayAs: timelineToday) {
-      return dailyTodayDisplayFormatter.string(from: displayDate)
+      return String(localized: "Today, \(dailyTodayDisplayFormatter.string(from: displayDate))")
     }
     return dailyOtherDayDisplayFormatter.string(from: displayDate)
   }
   func workflowTotalsTitle(for date: Date) -> String {
     if isTodaySelection(date) {
-      return "Today's total so far"
+      return String(localized: "Today's total so far")
     }
     if isYesterdaySelection(date) {
-      return "Yesterday's total"
+      return String(localized: "Yesterday's total")
     }
 
     let displayDate = timelineDisplayDate(from: date)
-    return "Total for \(dailyStandupSectionDayFormatter.string(from: displayDate))"
+    return String(
+      localized: "Total for \(dailyStandupSectionDayFormatter.string(from: displayDate))")
   }
   func formatDuration(minutes: Double) -> String {
     formatDurationValue(minutes)
