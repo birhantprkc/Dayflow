@@ -45,6 +45,8 @@ final class FlowDistractionAgent: ObservableObject {
     let action: String?
     let message: String?
     let reason: String?
+    /// Short goal ids ("g2") the model saw finished on screen this turn.
+    let completed_goals: [String]?
   }
 
   /// The optional second object in a reply: the model's revised timeline.
@@ -68,6 +70,10 @@ final class FlowDistractionAgent: ObservableObject {
   private var lastReportedOffTask = false
 
   private var goals: [String] = []
+  /// Open tasks with ids; the briefing labels them g1, g2… and the model
+  /// reports those short ids back in `completed_goals`.
+  private var goalTasks: [FlowGoalTask] = []
+  private var reportedGoalIds: Set<String> = []
   private var alertStyle: FlowAlertStyle = .friendly
   private var sessionStartedAt = Date()
   private var sessionEndsAt: Date?
@@ -137,6 +143,10 @@ final class FlowDistractionAgent: ObservableObject {
     }
 
     goals = snapshot.goals ?? []
+    goalTasks =
+      snapshot.goalTasks
+      ?? goals.enumerated().map { FlowGoalTask(id: "goal-\($0.offset)", title: $0.element) }
+    if !rebrief { reportedGoalIds = [] }
     alertStyle = snapshot.alertStyle
     sessionStartedAt =
       snapshot.sessionStartedAt.map { Date(timeIntervalSince1970: TimeInterval($0)) } ?? Date()
@@ -283,6 +293,33 @@ final class FlowDistractionAgent: ObservableObject {
 
   /// The briefing exactly as it would be sent now (for the debug panel).
   var currentBriefing: String { initialPrompt() }
+
+  /// The open task list changed mid-session (voice additions, manual
+  /// check-offs): tell the model on its next tick, with fresh short ids.
+  func goalsChanged(to snapshot: FlowNativeSnapshot) {
+    guard codexSessionId != nil else { return }
+    let next = snapshot.goalTasks ?? []
+    guard next != goalTasks else { return }
+    let finished = goalTasks.filter { old in !next.contains(where: { $0.id == old.id }) }
+    let added = next.filter { new in !goalTasks.contains(where: { $0.id == new.id }) }
+    goalTasks = next
+    goals = next.map(\.title)
+    lastSnapshot = snapshot
+    var note = "GOALS UPDATED. Open goals are now:\n" + goalsList()
+    if !finished.isEmpty {
+      note += "\nNo longer open (done or removed): " + finished.map(\.title).joined(separator: "; ")
+    }
+    if !added.isEmpty {
+      note += "\nNewly added: " + added.map(\.title).joined(separator: "; ")
+    }
+    pendingNotes.append(note)
+  }
+
+  /// "- [g1] title" lines; the short id is the position in the current list.
+  private func goalsList() -> String {
+    goalTasks.enumerated().map { "- [g\($0.offset + 1)] \($0.element.title)" }
+      .joined(separator: "\n")
+  }
 
   /// Queue a line of context (snooze, back-to-work…) for the next tick.
   /// `markRefocused` also resets the off-task flag so a later distraction
@@ -469,6 +506,20 @@ final class FlowDistractionAgent: ObservableObject {
       }
     }
 
+    // Goals the model saw finished: resolve g-ids, relay once each.
+    let finished = (verdict.completed_goals ?? []).compactMap { short -> FlowGoalTask? in
+      let digits = short.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "g[] "))
+      guard let index = Int(digits), index >= 1, index <= goalTasks.count else { return nil }
+      let task = goalTasks[index - 1]
+      guard !reportedGoalIds.contains(task.id) else { return nil }
+      return task
+    }
+    if !finished.isEmpty {
+      reportedGoalIds.formUnion(finished.map(\.id))
+      print("[FlowAgent] Goals completed: \(finished.map(\.title))")
+      FlowSessionMirror.shared.agentCompletedGoals(finished)
+    }
+
     switch verdict.action {
     case "nudge":
       let message =
@@ -507,7 +558,7 @@ final class FlowDistractionAgent: ObservableObject {
         feeds, and aimless browsing are off task.
         """
     } else {
-      goalsBlock = goals.map { "- \($0)" }.joined(separator: "\n")
+      goalsBlock = goalsList()
     }
 
     let styleBlock: String
@@ -614,6 +665,12 @@ final class FlowDistractionAgent: ObservableObject {
     after they recover from a distraction.
     - message is required whenever action isn't "none". reason: a few words of evidence \
     whenever status is "off_task".
+    - completed_goals: optional. Each goal above has a short id in brackets. When the \
+    screen shows a goal has been FINISHED — the PR is merged, the email is in Sent, the \
+    doc is published, the ticket is closed, they typed "done" — include its id, e.g. \
+    "completed_goals": ["g2"], in that turn's verdict. Working on a goal is not finishing \
+    it: only report on clear evidence of completion, and report each goal once. Dayflow \
+    checks the task off for them, so a false positive is worse than a miss.
 
     ALERT STYLE
     {{style_rules}}

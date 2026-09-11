@@ -22,6 +22,13 @@ enum FlowPhase: String, Codable {
   case ended
 }
 
+/// An open task the user wants done this session, with the id the web app
+/// needs to check it off when the agent sees it finished.
+struct FlowGoalTask: Codable, Equatable {
+  var id: String
+  var title: String
+}
+
 /// Snapshot the web UI pushes over the bridge whenever session state changes.
 /// Timestamps are unix seconds so the overlay can count down locally without
 /// chatty bridge traffic.
@@ -36,6 +43,8 @@ struct FlowNativeSnapshot: Codable, Equatable {
   var sessionStartedAt: Int?
   /// The user's stated focus for the session (priority task titles).
   var goals: [String]?
+  /// The same tasks with ids, for the agent's goal tracking.
+  var goalTasks: [FlowGoalTask]?
 
   static let idle = FlowNativeSnapshot()
 
@@ -67,6 +76,12 @@ struct FlowNativeSnapshot: Codable, Equatable {
     self.alwaysOn = payload["alwaysOn"] as? Bool ?? false
     self.sessionStartedAt = payload["sessionStartedAt"] as? Int
     self.goals = payload["goals"] as? [String]
+    self.goalTasks = (payload["goalTasks"] as? [[String: Any]])?.compactMap { entry in
+      guard let id = entry["id"] as? String, let title = entry["title"] as? String else {
+        return nil
+      }
+      return FlowGoalTask(id: id, title: title)
+    }
   }
 
   var bridgePayload: [String: Any] {
@@ -79,6 +94,7 @@ struct FlowNativeSnapshot: Codable, Equatable {
     if let breakEndsAt { payload["breakEndsAt"] = breakEndsAt }
     if let sessionStartedAt { payload["sessionStartedAt"] = sessionStartedAt }
     if let goals { payload["goals"] = goals }
+    if let goalTasks { payload["goalTasks"] = goalTasks.map { ["id": $0.id, "title": $0.title] } }
     return payload
   }
 }

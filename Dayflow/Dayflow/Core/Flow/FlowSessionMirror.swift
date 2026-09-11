@@ -102,6 +102,10 @@ final class FlowSessionMirror: ObservableObject {
       breakOverlayTimer?.invalidate()
       showToast(String(localized: "Break's over. Back to it!"))
       FlowDistractionAgent.shared.resume()
+      FlowDistractionAgent.shared.goalsChanged(to: newSnapshot)
+    case (.active, .active):
+      // Tasks added by voice or checked off by hand mid-session.
+      FlowDistractionAgent.shared.goalsChanged(to: newSnapshot)
     case (_, .idle), (_, .ended):
       isDistracted = false
       snoozeUntil = nil
@@ -188,6 +192,22 @@ final class FlowSessionMirror: ObservableObject {
       "flow_agent_nudge", ["alert_style": snapshot.alertStyle.rawValue])
     nudgeStreak += 1
     overlay = .nudge(message: message, escalated: nudgeStreak >= 2)
+  }
+
+  /// The agent saw goals get finished on screen: the web UI checks them off
+  /// (completed by Flow), and the creature celebrates unless it's quiet mode.
+  func agentCompletedGoals(_ goals: [FlowGoalTask]) {
+    guard snapshot.phase == .active, !goals.isEmpty else { return }
+    webBridge?.sendEvent("tasksCompleted", payload: ["ids": goals.map(\.id)])
+    AnalyticsService.shared.capture("flow_agent_goal_completed", ["count": goals.count])
+    guard snapshot.alertStyle != .quiet else { return }
+    if case .nudge = overlay { return }
+    let title = goals[0].title
+    let message =
+      goals.count == 1
+      ? String(localized: "Checked off: \(title)")
+      : String(localized: "Checked off \(goals.count) tasks, including \(title)")
+    showToast(message, seconds: FlowAgentSettings.shared.praiseSeconds)
   }
 
   /// Short encouragement from the agent, shown as an auto-dismissing toast.
