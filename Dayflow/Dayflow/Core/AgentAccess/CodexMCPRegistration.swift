@@ -78,11 +78,14 @@ struct CodexMCPRegistration: @unchecked Sendable {
       ["mcp", "add", "dayflow", "--", cliPath, "mcp"]
     )
     guard result.exitCode == 0 else {
-      return .failed(commandFailureMessage(action: "connect", result: result))
+      return .failed(commandFailureMessage(action: .connect, result: result))
     }
 
     guard status(using: executableURL) == .connected else {
-      return .failed("Codex updated its configuration, but Dayflow couldn't verify the connection.")
+      return .failed(
+        String(
+          localized:
+            "Codex updated its configuration, but Dayflow couldn't verify the connection."))
     }
     return .connected
   }
@@ -105,11 +108,12 @@ struct CodexMCPRegistration: @unchecked Sendable {
 
     let result = runCommand(executableURL, ["mcp", "remove", "dayflow"])
     guard result.exitCode == 0 else {
-      return .failed(commandFailureMessage(action: "disconnect", result: result))
+      return .failed(commandFailureMessage(action: .disconnect, result: result))
     }
 
     guard status(using: executableURL) == .available else {
-      return .failed("Codex removed the connection, but Dayflow couldn't verify the change.")
+      return .failed(
+        String(localized: "Codex removed the connection, but Dayflow couldn't verify the change."))
     }
     return .disconnected
   }
@@ -134,7 +138,7 @@ struct CodexMCPRegistration: @unchecked Sendable {
       if isMissingServerResult(result) {
         return .available
       }
-      return .failed(commandFailureMessage(action: "check", result: result))
+      return .failed(commandFailureMessage(action: .check, result: result))
     }
 
     guard let data = result.stdout.data(using: .utf8),
@@ -185,14 +189,28 @@ struct CodexMCPRegistration: @unchecked Sendable {
     URL(fileURLWithPath: path).standardizedFileURL.path
   }
 
-  private func commandFailureMessage(action: String, result: CommandResult) -> String {
+  private enum ConnectionAction {
+    case connect, disconnect, check
+  }
+
+  private func commandFailureMessage(action: ConnectionAction, result: CommandResult) -> String {
     let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
     let stdout = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
     let detail = stderr.isEmpty ? stdout : stderr
-    if detail.isEmpty {
-      return "Codex couldn't \(action) the Dayflow connection."
+    switch action {
+    case .connect:
+      return detail.isEmpty
+        ? String(localized: "Codex couldn't connect to Dayflow.")
+        : String(localized: "Codex couldn't connect to Dayflow: \(detail)")
+    case .disconnect:
+      return detail.isEmpty
+        ? String(localized: "Codex couldn't disconnect from Dayflow.")
+        : String(localized: "Codex couldn't disconnect from Dayflow: \(detail)")
+    case .check:
+      return detail.isEmpty
+        ? String(localized: "Codex couldn't check the Dayflow connection.")
+        : String(localized: "Codex couldn't check the Dayflow connection: \(detail)")
     }
-    return "Codex couldn't \(action) the Dayflow connection: \(detail)"
   }
 
   private var conflictingRegistrationMessage: String {
