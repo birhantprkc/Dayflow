@@ -18,7 +18,7 @@ struct ReferralSurveyView: View {
 
   init(
     prompt: String,
-    submitLabel: String = "Submit",
+    submitLabel: String = String(localized: "Submit"),
     showsThankYou: Bool = false,
     showSubmitButton: Bool = true,
     selectedReferral: Binding<ReferralOption?>? = nil,
@@ -184,7 +184,7 @@ struct ReferralSurveyView: View {
   }
 
   private var currentDetailPlaceholder: String {
-    selectedReferral?.detailPlaceholder ?? "Tell me more"
+    selectedReferral?.detailPlaceholder ?? String(localized: "Tell me more")
   }
 
   private func handleSubmit() {
@@ -214,13 +214,13 @@ enum ReferralOption: CaseIterable, Identifiable, Hashable {
 
   var displayName: String {
     switch self {
-    case .hackerNews: return "Hacker News"
-    case .x: return "X / Twitter"
-    case .friend: return "Friend or colleague"
-    case .youtube: return "YouTube"
-    case .newsletterBlog: return "Newsletter or blog (which one?)"
-    case .chatGPTClaudeAI: return "ChatGPT / Claude / AI"
-    case .other: return "Other (please specify)"
+    case .hackerNews: return String(localized: "Hacker News")
+    case .x: return String(localized: "X / Twitter")
+    case .friend: return String(localized: "Friend or colleague")
+    case .youtube: return String(localized: "YouTube")
+    case .newsletterBlog: return String(localized: "Newsletter or blog (which one?)")
+    case .chatGPTClaudeAI: return String(localized: "ChatGPT / Claude / AI")
+    case .other: return String(localized: "Other (please specify)")
     }
   }
 
@@ -248,13 +248,13 @@ enum ReferralOption: CaseIterable, Identifiable, Hashable {
   var detailPlaceholder: String {
     switch self {
     case .newsletterBlog:
-      return "Which newsletter or blog?"
+      return String(localized: "Which newsletter or blog?")
     case .youtube:
-      return "Which channel?"
+      return String(localized: "Which channel?")
     case .chatGPTClaudeAI:
-      return "What did you ask ChatGPT or Claude that led you to Dayflow?"
+      return String(localized: "What did you ask ChatGPT or Claude that led you to Dayflow?")
     case .other:
-      return "Where did you hear about Dayflow?"
+      return String(localized: "Where did you hear about Dayflow?")
     default:
       return ""
     }
