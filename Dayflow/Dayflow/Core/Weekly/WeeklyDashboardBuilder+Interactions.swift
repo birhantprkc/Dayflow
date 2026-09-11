@@ -113,10 +113,13 @@ extension WeeklyDashboardBuilder {
       from: transitions, aggregates: nodeByKey, visibleApps: visibleApps)
     let totalMinutes = appFacts.reduce(0) { $0 + $1.durationMinutes }
     let visibleMinutes = visibleApps.reduce(0) { $0 + $1.minutes }
-    let coverage = Int((Double(visibleMinutes) / Double(max(totalMinutes, 1)) * 100).rounded())
+    let coverage = Double(visibleMinutes) / Double(max(totalMinutes, 1))
+    let coverageText = coverage.formatted(.percent.precision(.fractionLength(0)))
 
     return WeeklyApplicationInteractionsSnapshot(
-      subtitle: "About \(coverage)% of recorded app time was spent using these applications.",
+      subtitle: String(
+        localized: "About \(coverageText) of recorded app time was spent using these applications."
+      ),
       nodes: nodes,
       edges: Array(edges),
       patterns: patterns,
@@ -295,7 +298,7 @@ extension WeeklyDashboardBuilder {
     -> WeeklyApplicationInteractionsSnapshot
   {
     WeeklyApplicationInteractionsSnapshot(
-      subtitle: "No recorded app interactions for this week yet.",
+      subtitle: String(localized: "No recorded app interactions for this week yet."),
       nodes: [],
       edges: [],
       patterns: [],
@@ -331,11 +334,13 @@ extension WeeklyDashboardBuilder {
         (lhs.distracted + lhs.shifts) < (rhs.distracted + rhs.shifts)
       }), busiest.distracted + busiest.shifts > 0
     else {
-      return "No context shift or distraction pattern was detected in this week."
+      return String(localized: "No context shift or distraction pattern was detected in this week.")
     }
 
-    return
-      "\(busiest.day) had the most interruptions, with \(busiest.shifts) context shifts and \(busiest.distracted) distractions."
+    return String(
+      localized:
+        "\(busiest.day) had the most interruptions, with \(busiest.shifts) context shifts and \(busiest.distracted) distractions."
+    )
   }
 
   private static func edgeKind(
@@ -379,7 +384,7 @@ extension WeeklyDashboardBuilder {
 
   private static func averageDurationText(minutes: Int, visits: Int) -> String {
     let averageMinutes = max(1, Int((Double(minutes) / Double(max(visits, 1))).rounded()))
-    return "\(durationText(averageMinutes)) avg"
+    return String(localized: "\(durationText(averageMinutes)) avg")
   }
 
   private static func clockTime(from minute: Double) -> String {
