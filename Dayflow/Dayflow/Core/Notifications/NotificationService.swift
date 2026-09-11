@@ -57,8 +57,8 @@ final class NotificationService: NSObject, ObservableObject {
         NotificationBadgeManager.shared.supportUnreadCount > 0
       else { return }
       let content = UNMutableNotificationContent()
-      content.title = "New reply from Dayflow"
-      content.body = "You have a new support reply. Open Support to read it."
+      content.title = String(localized: "New reply from Dayflow")
+      content.body = String(localized: "You have a new support reply. Open Support to read it.")
       content.sound = .default
       do {
         try await center.add(
@@ -210,8 +210,8 @@ final class NotificationService: NSObject, ObservableObject {
     print("[NotificationService] removed pending notification identifier=\(identifier)")
 
     let content = UNMutableNotificationContent()
-    content.title = "Your daily recap for yesterday is ready"
-    content.body = "Tap to open it in Daily view."
+    content.title = String(localized: "Your daily recap for yesterday is ready")
+    content.body = String(localized: "Tap to open it in Daily view.")
     content.sound = .default
     content.categoryIdentifier = "daily_recap"
     content.userInfo = ["day": day]
@@ -270,8 +270,8 @@ final class NotificationService: NSObject, ObservableObject {
     center.removePendingNotificationRequests(withIdentifiers: [identifier])
 
     let content = UNMutableNotificationContent()
-    content.title = "Weekly view is ready"
-    content.body = "Tap to open your weekly review."
+    content.title = String(localized: "Weekly view is ready")
+    content.body = String(localized: "Tap to open your weekly review.")
     content.sound = .default
     content.categoryIdentifier = "weekly_unlock"
 
