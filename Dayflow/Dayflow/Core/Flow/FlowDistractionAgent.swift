@@ -89,7 +89,16 @@ final class FlowDistractionAgent: ObservableObject {
   /// Some models reject reasoning summaries (a user's global config.toml may
   /// set model_reasoning_summary = "detailed"), and the agent never wants
   /// them anyway — ticks should produce nothing but the JSON verdict.
-  private static let codexConfigOverrides = ["model_reasoning_summary=none"]
+  /// workspace-write lets the model edit the session timeline file that
+  /// native drops into its working directory (nothing else is in there).
+  private static let codexConfigOverrides = [
+    "model_reasoning_summary=none", "sandbox_mode=workspace-write",
+  ]
+
+  /// The model-facing timeline file, inside the Codex working directory.
+  private var timelineFileURL: URL? {
+    workDirectory?.appendingPathComponent("timeline.json")
+  }
 
   private init() {
     // A new cadence applies to the running session immediately.
@@ -306,6 +315,10 @@ final class FlowDistractionAgent: ObservableObject {
     let askTimeline =
       forceTimelineUpdate || timeline.wantsUpdate(every: settings.timelineEverySeconds)
     forceTimelineUpdate = false
+    if askTimeline, let file = timelineFileURL {
+      // The model reads and edits this file during the turn.
+      try? timeline.promptTimelineJSON().write(to: file, atomically: true, encoding: .utf8)
+    }
     let message = tickMessage(askTimeline: askTimeline)
     pendingNotes = []
     let runner = self.runner
@@ -361,14 +374,14 @@ final class FlowDistractionAgent: ObservableObject {
       await MainActor.run {
         FlowDistractionAgent.shared.finishTick(
           generation: gen, reply: replyText, error: errorText, seconds: elapsed,
-          front: front)
+          front: front, askedTimeline: askTimeline)
       }
     }
   }
 
   private func finishTick(
     generation gen: Int, reply: String?, error: String?, seconds: Double,
-    front: FlowSessionTimeline.FrontApp
+    front: FlowSessionTimeline.FrontApp, askedTimeline: Bool
   ) {
     guard gen == generation else { return }
     tickInFlight = false
@@ -414,14 +427,36 @@ final class FlowDistractionAgent: ObservableObject {
     // tick asked for one) rides behind it in a second object.
     handle(verdict: verdict)
     timeline.observe(offTask: verdict.status == "off_task", front: front, reason: verdict.reason)
-    for object in objects.dropFirst() {
+    if askedTimeline { readBackTimeline(fallback: Array(objects.dropFirst())) }
+  }
+
+  /// After a timeline turn: take the file the model edited (or, if it
+  /// answered inline instead, a {"timeline": [...]} object in its reply).
+  private func readBackTimeline(fallback objects: [String]) {
+    if let file = timelineFileURL, let data = try? Data(contentsOf: file),
+      let items = Self.decodeTimelineItems(data), !items.isEmpty
+    {
+      timeline.apply(modelItems: items)
+      return
+    }
+    for object in objects {
       if let parsed = try? JSONDecoder().decode(TimelineReply.self, from: Data(object.utf8)),
         let items = parsed.timeline
       {
         timeline.apply(modelItems: items)
-        break
+        return
       }
     }
+    appendTranscript("Timeline update: the model didn't leave a usable timeline.json.")
+  }
+
+  /// The file may be a bare array or wrapped in {"timeline": [...]}.
+  private static func decodeTimelineItems(_ data: Data) -> [FlowSessionTimeline.ModelItem]? {
+    let decoder = JSONDecoder()
+    if let items = try? decoder.decode([FlowSessionTimeline.ModelItem].self, from: data) {
+      return items
+    }
+    return (try? decoder.decode(TimelineReply.self, from: data))?.timeline
   }
 
   private func handle(verdict: Verdict) {
@@ -584,20 +619,21 @@ final class FlowDistractionAgent: ObservableObject {
     {{style_rules}}
 
     THE SESSION TIMELINE
-    About once a minute a message will end with "TIMELINE UPDATE". On those turns, after \
-    the verdict object, add a SECOND JSON object on its own line:
-    {"timeline": [{"start": "HH:mm", "end": "HH:mm", "kind": "focused" | "distracted" | "break", "title": "..."}, ...]}
-    This is the user's session log as they'll see it afterwards, so write it like Dayflow's \
-    timeline: the WHOLE session from its start to now, revised each time, not a list of \
-    checks. Fold in what you've seen since the last update, and condense with hindsight — \
-    merge a stretch of work on one thing into a single entry even if they bounced between \
-    docs, terminal, and editor for it; rename earlier entries once you understand what they \
-    were really doing. But keep genuine splits: a detour to X or YouTube (kind \
-    "distracted"), even a one-minute one, and every break stay as their own entries. \
-    Entries must be contiguous (each starts where the previous ended, 24h HH:mm), the \
-    first starting at the session start. Titles are concrete, 3–7 words, like "Address \
-    feedback on PR", "Scrolling on X", "Reviewing checkout flow mockups in Figma". You'll \
-    be given your previous timeline and the exact check log to revise from.
+    You also keep the user's session log, the way Dayflow's timeline does. It lives in a \
+    file, timeline.json, in your working directory: a JSON array of entries \
+    {"start": "HH:mm", "end": "HH:mm", "kind": "focused" | "distracted" | "break", "title": "..."}. \
+    About once a minute a message will end with "TIMELINE UPDATE" and give you the file's \
+    path plus the check log since your last edit. On those turns, read the file and edit \
+    it in place as you see fit — usually extend the last entry or add one for what they've \
+    moved on to, and now and then condense: merge a stretch of work on one thing into a \
+    single entry even if they bounced between docs, terminal, and editor for it, and rename \
+    earlier entries once you understand what they were really doing. Keep genuine splits: \
+    a detour to X or YouTube (kind "distracted"), even a one-minute one, and every break \
+    stay as their own entries. Entries must stay contiguous (each starts where the previous \
+    ended, 24h HH:mm), the first at the session start, the last ending at the current time. \
+    Titles are concrete, 3–7 words, like "Address feedback on PR", "Scrolling on X", \
+    "Reviewing checkout flow mockups in Figma". After editing the file, reply with the \
+    verdict object as usual — the file is the timeline, don't repeat it in your reply.
 
     Don't overthink the ticks: no analysis, no chain of reasoning in your reply. Most \
     turns the correct answer is exactly {"status":"on_task","action":"none"}. Acknowledge \
@@ -624,11 +660,11 @@ final class FlowDistractionAgent: ObservableObject {
       let since = timeline.lastModelUpdateAt
       parts.append(
         """
-        TIMELINE UPDATE — after the verdict object, add the {"timeline": [...]} object covering \
-        the whole session (started \(FlowSessionTimeline.clock(sessionStartedAt))) up to now.
-        Your previous timeline:
-        \(timeline.promptTimelineJSON())
-        Check log since then (time · verdict · frontmost app · reason):
+        TIMELINE UPDATE — read \(timelineFileURL?.path ?? "timeline.json") and edit it in \
+        place so it covers the whole session (started \
+        \(FlowSessionTimeline.clock(sessionStartedAt))) up to now, then reply with the \
+        verdict object.
+        Check log since your last edit (time · verdict · frontmost app · reason):
         \(timeline.promptObservations(since: since))
         Breaks (exact, from the app): \(timeline.promptBreaks())
         """)
