@@ -63,14 +63,20 @@ struct DayflowSignInSheet: View {
 
   private var header: some View {
     VStack(alignment: .leading, spacing: 5) {
-      Text(step == .email ? "Sign in to Dayflow" : "Check your email")
-        .font(.custom("InstrumentSerif-Regular", size: 30))
-        .foregroundColor(SettingsStyle.text)
+      Text(
+        step == .email
+          ? String(localized: "Sign in to Dayflow") : String(localized: "Check your email")
+      )
+      .font(.custom("InstrumentSerif-Regular", size: 30))
+      .foregroundColor(SettingsStyle.text)
 
       Text(
         step == .email
-          ? "Enter your email and Dayflow will send a 6 digit code."
-          : "Enter the code sent to \(verificationEmail ?? authManager.pendingEmail ?? emailAddressTrimmed)."
+          ? String(localized: "Enter your email and Dayflow will send a 6 digit code.")
+          : String(
+            localized:
+              "Enter the code sent to \(verificationEmail ?? authManager.pendingEmail ?? emailAddressTrimmed)."
+          )
       )
       .font(.custom("Figtree", size: 13))
       .foregroundColor(SettingsStyle.secondary)
@@ -89,7 +95,7 @@ struct DayflowSignInSheet: View {
 
       HStack(spacing: 10) {
         SettingsPrimaryButton(
-          title: "Continue",
+          title: String(localized: "Continue"),
           systemImage: "arrow.right",
           isLoading: authManager.isBusy,
           isDisabled: emailAddressTrimmed.isEmpty,
@@ -97,7 +103,7 @@ struct DayflowSignInSheet: View {
         )
 
         SettingsSecondaryButton(
-          title: "Cancel",
+          title: String(localized: "Cancel"),
           isDisabled: authManager.isBusy,
           action: onDismiss
         )
@@ -137,7 +143,7 @@ struct DayflowSignInSheet: View {
 
       HStack(spacing: 10) {
         SettingsPrimaryButton(
-          title: "Verify",
+          title: String(localized: "Verify"),
           systemImage: "checkmark",
           isLoading: authManager.isBusy,
           isDisabled: verificationCodeTrimmed.count != 6,
@@ -145,7 +151,7 @@ struct DayflowSignInSheet: View {
         )
 
         SettingsSecondaryButton(
-          title: "Resend",
+          title: String(localized: "Resend"),
           isDisabled: authManager.isBusy,
           action: {
             Task {
@@ -159,7 +165,7 @@ struct DayflowSignInSheet: View {
         )
 
         SettingsSecondaryButton(
-          title: "Change email",
+          title: String(localized: "Change email"),
           isDisabled: authManager.isBusy,
           action: {
             authManager.useDifferentEmail()
