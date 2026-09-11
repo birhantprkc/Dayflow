@@ -50,10 +50,10 @@ final class FlowSessionMirror: ObservableObject {
 
   private var deadlineTimer: Timer?
   private var toastTimer: Timer?
-  /// The tub only stays for its intro and a couple of loops, then the creature
-  /// climbs out and the overlay clears so the break doesn't sit on the screen.
+  /// The tub only stays for its 8-second intro clip, then the creature climbs
+  /// out and the overlay clears so the break doesn't sit on the screen.
   private var breakOverlayTimer: Timer?
-  private static let breakOverlaySeconds: TimeInterval = 13
+  private static let breakOverlaySeconds: TimeInterval = 8
   private var snoozeUntil: Date?
   /// Nudges shown for the current distraction incident; the second one in a
   /// row escalates the creature to the fire animation.
@@ -302,8 +302,8 @@ final class FlowSessionMirror: ObservableObject {
 
   // MARK: - Break
 
-  /// Brings the tub out for the bath intro plus a couple of loops, then hides
-  /// the overlay again (the controller plays the climb-out clip on the way).
+  /// Brings the tub out for the bath intro clip, then hides the overlay again
+  /// (the controller plays the climb-out clip on the way).
   private func showBreak() {
     toastTimer?.invalidate()
     overlay = .onBreak
