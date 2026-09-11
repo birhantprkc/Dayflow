@@ -11,11 +11,26 @@ enum LLMOutputLanguagePreferences {
 
   static var normalizedOverride: String? {
     let trimmed = override.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return nil }
-    if trimmed.lowercased() == "english" {
-      return nil
-    }
+    // An explicit choice wins, including English on a non-English interface.
+    guard !trimmed.isEmpty else { return defaultOutputLanguage }
     return trimmed
+  }
+
+  static var defaultOutputLanguage: String? {
+    defaultOutputLanguage(for: Bundle.main.preferredLocalizations.first ?? "en")
+  }
+
+  static func defaultOutputLanguage(for localization: String) -> String? {
+    switch localization {
+    case "zh-Hans": return "Simplified Chinese"
+    case "zh-Hant": return "Traditional Chinese"
+    case "ko": return "Korean"
+    case "de": return "German"
+    case "ru": return "Russian"
+    case "fr": return "French"
+    case "ja": return "Japanese"
+    default: return nil
+    }
   }
 
   static func languageInstruction(forJSON: Bool) -> String? {
