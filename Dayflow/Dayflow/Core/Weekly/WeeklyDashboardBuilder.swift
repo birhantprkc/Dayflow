@@ -172,10 +172,10 @@ enum WeeklyDashboardBuilder {
       }
 
     return WeeklySuggestionsSnapshot(
-      title: "1:1 suggestions",
-      topLevelUpdatesTitle: "Top level updates",
+      title: String(localized: "1:1 suggestions"),
+      topLevelUpdatesTitle: String(localized: "Top level updates"),
       topLevelUpdates: Array(topLevelUpdates),
-      nextStepsTitle: "Next steps",
+      nextStepsTitle: String(localized: "Next steps"),
       nextSteps: Array(nextSteps)
     )
   }
@@ -360,14 +360,14 @@ enum WeeklyDashboardBuilder {
 
   private static func dayLabel(for offset: Int) -> String {
     switch offset {
-    case 0: return "Mon"
-    case 1: return "Tue"
-    case 2: return "Wed"
-    case 3: return "Thur"
-    case 4: return "Fri"
-    case 5: return "Sat"
-    case 6: return "Sun"
-    default: return "Day"
+    case 0: return String(localized: "Mon")
+    case 1: return String(localized: "Tue")
+    case 2: return String(localized: "Wed")
+    case 3: return String(localized: "Thur")
+    case 4: return String(localized: "Fri")
+    case 5: return String(localized: "Sat")
+    case 6: return String(localized: "Sun")
+    default: return String(localized: "Day")
     }
   }
 
@@ -385,12 +385,12 @@ enum WeeklyDashboardBuilder {
     let remainingMinutes = minutes % 60
 
     if hours > 0, remainingMinutes > 0 {
-      return "\(hours)h \(remainingMinutes)m"
+      return String(localized: "\(hours)h \(remainingMinutes)m")
     }
     if hours > 0 {
-      return "\(hours)h"
+      return String(localized: "\(hours)h")
     }
-    return "\(minutes)m"
+    return String(localized: "\(minutes)m")
   }
 
   private static func cardNarrative(for card: TimelineCard, maxLength: Int) -> String {
@@ -406,7 +406,7 @@ enum WeeklyDashboardBuilder {
 
   private static func shortTitle(_ title: String) -> String {
     let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-    return shortened(trimmed.isEmpty ? "Untitled" : trimmed, maxLength: 54)
+    return shortened(trimmed.isEmpty ? String(localized: "Untitled") : trimmed, maxLength: 54)
   }
 
   private static func firstUsefulSentence(from values: [String]) -> String {
