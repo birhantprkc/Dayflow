@@ -18,7 +18,7 @@ final class TimelineReviewPlaybackTimelineState: ObservableObject {
   }
   var onTimeChange: ((Double) -> Void)?
 
-  @Published var speedLabel: String = "60x"
+  @Published var speedLabel: String = String(localized: "60x")
   @Published var isPlaying: Bool = false
 }
 
