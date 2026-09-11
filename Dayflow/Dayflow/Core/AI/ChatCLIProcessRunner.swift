@@ -224,6 +224,28 @@ struct ChatCLIProcessRunner {
     processEnvironment["CODEX_HOME"] == nil
   }
 
+  /// Whether `codex exec [resume] --help` lists `--ignore-user-config`.
+  /// Cached per executable + subcommand: this is asked on every tick.
+  private nonisolated(unsafe) static var ignoreUserConfigSupport: [String: Bool] = [:]
+  private static let ignoreUserConfigSupportLock = NSLock()
+
+  static func codexSupportsIgnoringUserConfig(executableCommand: String, resuming: Bool) -> Bool {
+    let key = "\(executableCommand)\(resuming ? " resume" : "")"
+    ignoreUserConfigSupportLock.lock()
+    if let cached = ignoreUserConfigSupport[key] {
+      ignoreUserConfigSupportLock.unlock()
+      return cached
+    }
+    ignoreUserConfigSupportLock.unlock()
+    let helpCommand = "\(executableCommand) exec\(resuming ? " resume" : "") --help"
+    let supported = LoginShellRunner.run(helpCommand, timeout: 10)
+      .stdout.contains("--ignore-user-config")
+    ignoreUserConfigSupportLock.lock()
+    ignoreUserConfigSupport[key] = supported
+    ignoreUserConfigSupportLock.unlock()
+    return supported
+  }
+
   func resolvedCodexExecutable(for tool: ChatCLITool) throws
     -> CodexExecutableResolver.Resolution?
   {
@@ -475,10 +497,9 @@ struct ChatCLIProcessRunner {
       for override in codexConfigOverrides {
         cmdParts.append(contentsOf: ["-c", LoginShellRunner.shellEscape(override)])
       }
-      let helpCommand = "\(executableCommand) exec\(sessionId == nil ? "" : " resume") --help"
-      let supportsIgnoringUserConfig = LoginShellRunner.run(helpCommand, timeout: 10)
-        .stdout.contains("--ignore-user-config")
-      if supportsIgnoringUserConfig {
+      if Self.codexSupportsIgnoringUserConfig(
+        executableCommand: executableCommand, resuming: sessionId != nil)
+      {
         // Keep auth and resumable sessions in the normal home without loading
         // unrelated MCP configuration or moving sessions into a temporary home.
         cmdParts.append("--ignore-user-config")
@@ -1253,7 +1274,20 @@ struct ChatCLIProcessRunner {
       for override in codexConfigOverrides {
         cmdParts.append(contentsOf: ["-c", LoginShellRunner.shellEscape(override)])
       }
-      if shouldDisableConfiguredCodexMCPServers(processEnvironment: effectiveProcessEnvironment) {
+      // Same as the streaming path: skip the user's config.toml entirely
+      // when the CLI can. Disabling MCP servers one by one breaks on
+      // plugin-registered servers (e.g. the computer-use app's cua_repl) that
+      // have no config.toml entry — the override creates a partial table,
+      // config loading fails with "invalid transport", and the fallback
+      // below moves the run into a temporary CODEX_HOME where `exec resume`
+      // finds no rollout.
+      if Self.codexSupportsIgnoringUserConfig(
+        executableCommand: executableCommand, resuming: codexResumeSessionId != nil)
+      {
+        cmdParts.append("--ignore-user-config")
+      } else if shouldDisableConfiguredCodexMCPServers(
+        processEnvironment: effectiveProcessEnvironment)
+      {
         let mcpServers = LoginShellRunner.getCodexMCPServerNames(
           executableURL: codexExecutable!.executableURL
         )
