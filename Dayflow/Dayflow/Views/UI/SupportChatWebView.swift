@@ -193,6 +193,25 @@ struct SupportChatWebView: NSViewRepresentable {
       "apiHost": info?["PHPostHogHost"] as? String ?? "https://us.i.posthog.com",
       "appVersion": info?["CFBundleShortVersionString"] as? String ?? "",
       "palette": palette.values,
+      "language": Bundle.main.preferredLocalizations.first ?? "en",
+      "strings": [
+        "email": String(localized: "Your email"),
+        "emailPlaceholder": String(localized: "so we can reply if you close the app"),
+        "messagePlaceholder": String(
+          localized: "What's going on? Bugs, ideas, confusion — all welcome."),
+        "debug": String(localized: "Attach debug logs"),
+        "send": String(localized: "Send"),
+        "you": String(localized: "You"),
+        "greeting": String(
+          localized:
+            "Hey there! Found a bug, have an idea, or just confused about something? Drop it here and a real person on the Dayflow team will get back to you in this chat."
+        ),
+        "emailRequired": String(localized: "Add your email so we can reply."),
+        "unavailable": String(localized: "Support is not available right now."),
+        "sent": String(localized: "Sent. Replies show up here and in your inbox."),
+        "sendFailed": String(localized: "Couldn't send. Try again."),
+        "rateLimited": String(localized: "Slow down a little — try again in a minute."),
+      ],
     ]
     if let distinctId = AnalyticsService.shared.currentDistinctId() {
       config["distinctId"] = distinctId
@@ -503,7 +522,14 @@ private enum SupportChatPage {
         error: document.getElementById("error")
       };
 
-      var GREETING = "Hey there! Found a bug, have an idea, or just confused about something? Drop it here and a real person on the Dayflow team will get back to you in this chat.";
+      var strings = config.strings;
+      document.documentElement.lang = config.language || "en";
+      document.querySelector('label[for="email"]').textContent = strings.email;
+      el.email.placeholder = strings.emailPlaceholder;
+      el.text.placeholder = strings.messagePlaceholder;
+      document.querySelector('#debug-toggle span').textContent = strings.debug;
+      el.send.textContent = strings.send;
+      var GREETING = strings.greeting;
       // Logs travel as a PostHog event on the same person, not inside the message,
       // so the ticket thread stays readable. Event properties allow ~1MB; stay well under.
       var DEBUG_LOG_LIMIT = 200000;
@@ -558,7 +584,7 @@ private enum SupportChatPage {
       function formatTime(iso) {
         var date = new Date(iso);
         if (isNaN(date.getTime())) return "";
-        return date.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+        return date.toLocaleString(config.language || "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       }
 
       function appendMessage(message) {
@@ -575,7 +601,7 @@ private enum SupportChatPage {
 
         var meta = document.createElement("div");
         meta.className = "meta " + (isUser ? "user" : "team");
-        var who = isUser ? "You" : (message.author_name || "Dayflow");
+        var who = isUser ? strings.you : (message.author_name || "Dayflow");
         var when = message.created_at ? formatTime(message.created_at) : "";
         meta.textContent = when ? who + " · " + when : who;
         el.messages.appendChild(meta);
@@ -663,7 +689,7 @@ private enum SupportChatPage {
 
         var email = el.email.value.trim();
         if (!isLikelyEmail(email)) {
-          showError("Add your email so we can reply.");
+          showError(strings.emailRequired);
           el.email.focus();
           return;
         }
@@ -681,7 +707,7 @@ private enum SupportChatPage {
         var hadTicket = !!posthog.conversations.getCurrentTicketId();
         try {
           var response = await posthog.conversations.sendMessage(text, traits);
-          if (!response) throw new Error("Support is not available right now.");
+          if (!response) throw new Error(strings.unavailable);
           if (attachDebug) sendDebugLogEvent(log, response);
           el.text.value = "";
           appendMessage({
@@ -691,11 +717,11 @@ private enum SupportChatPage {
             created_at: response.created_at
           });
           native({ event: "sent", hasDebugLog: attachDebug, newTicket: !hadTicket });
-          if (!hadTicket) showStatus("Sent. Replies show up here and in your inbox.");
+          if (!hadTicket) showStatus(strings.sent);
           startPolling();
         } catch (error) {
-          var message = (error && error.message) || "Couldn't send. Try again.";
-          if (message.indexOf("Too many") >= 0) message = "Slow down a little — try again in a minute.";
+          var message = (error && error.message) || strings.sendFailed;
+          if (message.indexOf("Too many") >= 0) message = strings.rateLimited;
           showError(message);
         } finally {
           state.sending = false;
