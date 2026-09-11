@@ -43,7 +43,8 @@ struct AgentWorkstream: Codable, Identifiable, Sendable {
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    name = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? "Untitled"
+    name =
+      (try? container.decodeIfPresent(String.self, forKey: .name)) ?? String(localized: "Untitled")
     id = (try? container.decodeIfPresent(String.self, forKey: .id)) ?? name
     summary = (try? container.decodeIfPresent(String.self, forKey: .summary)) ?? ""
     bullets = (try? container.decodeIfPresent([String].self, forKey: .bullets)) ?? []
@@ -69,7 +70,9 @@ struct AgentThread: Codable, Identifiable, Sendable {
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    title = (try? container.decodeIfPresent(String.self, forKey: .title)) ?? "Untitled thread"
+    title =
+      (try? container.decodeIfPresent(String.self, forKey: .title))
+      ?? String(localized: "Untitled thread")
     id = (try? container.decodeIfPresent(String.self, forKey: .id)) ?? title
     let sourceRaw = (try? container.decodeIfPresent(String.self, forKey: .source)) ?? ""
     source = AgentThreadSource(rawValue: sourceRaw) ?? .claude
@@ -142,8 +145,8 @@ enum AgentThreadSource: String, Codable, Sendable {
 
   var displayName: String {
     switch self {
-    case .claude: return "Claude Code"
-    case .codex: return "Codex"
+    case .claude: return String(localized: "Claude Code")
+    case .codex: return String(localized: "Codex")
     }
   }
 }
@@ -156,10 +159,10 @@ enum AgentThreadStatus: String, Codable, CaseIterable, Sendable {
 
   var displayName: String {
     switch self {
-    case .blocked: return "Blocked"
-    case .reviewReady: return "Review ready"
-    case .inProgress: return "In progress"
-    case .completed: return "Completed"
+    case .blocked: return String(localized: "Blocked")
+    case .reviewReady: return String(localized: "Review ready")
+    case .inProgress: return String(localized: "In progress")
+    case .completed: return String(localized: "Completed")
     }
   }
 }
@@ -214,10 +217,15 @@ enum AgentCardStyle: String, CaseIterable, Identifiable {
 
   var displayName: String {
     switch self {
-    case .messenger: return "Messenger"
-    case .transcript: return "Transcript"
-    case .brief: return "Brief"
-    case .milestones: return "Milestones"
+    case .messenger: return String(localized: "Messenger")
+    case .transcript: return String(localized: "Transcript")
+    case .brief:
+      return String(
+        localized: "Briefing",
+        comment:
+          "An agent milestone containing instructions or a summary; a noun, not the adjective short."
+      )
+    case .milestones: return String(localized: "Milestones")
     }
   }
 }
