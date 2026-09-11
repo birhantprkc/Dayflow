@@ -327,12 +327,12 @@ final class DailyRecapScheduler: @unchecked Sendable {
     }
 
     guard !ordered.isEmpty else {
-      return "No timeline activities were recorded for \(day)."
+      return String(localized: "No timeline activities were recorded for \(day).")
     }
 
     var lines: [String] = ["Timeline activities for \(day):", ""]
     for (index, card) in ordered.enumerated() {
-      let title = standupLine(from: card) ?? "Untitled activity"
+      let title = standupLine(from: card) ?? String(localized: "Untitled activity")
       let start = humanReadableClockTime(card.startTimestamp)
       let end = humanReadableClockTime(card.endTimestamp)
       lines.append("\(index + 1). \(start) - \(end): \(title)")
@@ -348,7 +348,7 @@ final class DailyRecapScheduler: @unchecked Sendable {
 
   private static func makeObservationsText(day: String, observations: [Observation]) -> String {
     guard !observations.isEmpty else {
-      return "No observations were recorded for \(day)."
+      return String(localized: "No observations were recorded for \(day).")
     }
 
     let ordered = observations.sorted { $0.startTs < $1.startTs }
@@ -363,7 +363,7 @@ final class DailyRecapScheduler: @unchecked Sendable {
     }
 
     if lines.count <= 2 {
-      return "No observations were recorded for \(day)."
+      return String(localized: "No observations were recorded for \(day).")
     }
     return lines.joined(separator: "\n")
   }
@@ -373,10 +373,11 @@ final class DailyRecapScheduler: @unchecked Sendable {
 
     return entries.map { entry in
       let payload = entry.payloadJSON.trimmingCharacters(in: .whitespacesAndNewlines)
-      return """
-        Day \(entry.standupDay):
-        \(payload)
-        """
+      return String(
+        localized: """
+          Day \(entry.standupDay):
+          \(payload)
+          """)
     }
     .joined(separator: "\n\n")
   }
