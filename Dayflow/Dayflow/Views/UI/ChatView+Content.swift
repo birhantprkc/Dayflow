@@ -634,14 +634,14 @@ extension ChatView {
 
   var chatUnlockButtonTitle: String {
     if !hasChatMinimumAccess {
-      return "Keep recording to unlock"
+      return String(localized: "Keep recording to unlock")
     }
 
     if !anyRuntimeAvailable {
-      return "Configure a runtime to continue"
+      return String(localized: "Configure a runtime to continue")
     }
 
-    return "Unlock Beta"
+    return String(localized: "Unlock Beta")
   }
 
   // MARK: - Input Area
@@ -653,7 +653,7 @@ extension ChatView {
         text: $inputText,
         isFocused: $isInputFocused,
         focusToken: composerFocusToken,
-        placeholder: "Ask about your Dayflow data...",
+        placeholder: String(localized: "Ask about your Dayflow data..."),
         onSubmit: submitCurrentInputIfAllowed
       )
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -753,21 +753,21 @@ extension ChatView {
   var providerToggle: some View {
     HStack(spacing: 6) {
       ProviderTogglePill(
-        title: "Gemini",
+        title: String(localized: "Gemini"),
         isSelected: selectedProvider == .gemini,
         isEnabled: isProviderAvailable(.gemini)
       ) {
         handleProviderSelection(.gemini)
       }
       ProviderTogglePill(
-        title: "Codex",
+        title: String(localized: "Codex"),
         isSelected: selectedProvider == .codex,
         isEnabled: isProviderAvailable(.codex)
       ) {
         handleProviderSelection(.codex)
       }
       ProviderTogglePill(
-        title: "Claude",
+        title: String(localized: "Claude"),
         isSelected: selectedProvider == .claude,
         isEnabled: isProviderAvailable(.claude)
       ) {
