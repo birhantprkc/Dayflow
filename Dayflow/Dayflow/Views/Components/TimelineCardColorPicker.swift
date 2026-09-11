@@ -262,14 +262,20 @@ struct ColorOrganizerRoot: View {
         instructionRow(
           icon: "CategoriesOrganize",
           text:
-            "Dayflow organizes your activities by the category titles and descriptions you provide."
+            String(
+              localized:
+                "Dayflow organizes your activities by the category titles and descriptions you provide."
+            )
         )
         .frame(maxWidth: isCompact ? .infinity : 280, alignment: .leading)
 
         instructionRow(
           icon: "CategoriesTextSelect",
           text:
-            "Try to provide as much details in the descriptions as you can to help Dayflow understand your workflow and habits."
+            String(
+              localized:
+                "Try to provide as much details in the descriptions as you can to help Dayflow understand your workflow and habits."
+            )
         )
         .frame(maxWidth: isCompact ? .infinity : 280, alignment: .leading)
       }
@@ -348,8 +354,11 @@ struct ColorOrganizerRoot: View {
       VStack(alignment: .leading, spacing: 12) {
         Text(
           isDraggingColor
-            ? "Drop on a category →"
-            : "Click and drag on the canvas above to change the color palette. Then drag a color onto a category."
+            ? String(localized: "Drop on a category →")
+            : String(
+              localized:
+                "Click and drag on the canvas above to change the color palette. Then drag a color onto a category."
+            )
         )
         .font(Font.custom("Figtree", size: 13).weight(.medium))
         .foregroundColor(
@@ -484,13 +493,13 @@ struct ColorOrganizerRoot: View {
 
       if stage == .details {
         if supportsDetailsStage == false, let onBack {
-          SetupSecondaryButton(title: "Back") {
+          SetupSecondaryButton(title: String(localized: "Back")) {
             commitPendingEditsIfNeeded()
             onBack()
           }
         }
 
-        SetupContinueButton(title: "Next", isEnabled: !categories.isEmpty) {
+        SetupContinueButton(title: String(localized: "Next"), isEnabled: !categories.isEmpty) {
           commitPendingEditsIfNeeded()
           trackDetailsCompletion()
           categoryStore.persist()
@@ -499,7 +508,7 @@ struct ColorOrganizerRoot: View {
           }
         }
       } else {
-        SetupSecondaryButton(title: "Back") {
+        SetupSecondaryButton(title: String(localized: "Back")) {
           if supportsDetailsStage {
             withAnimation(.easeInOut(duration: 0.25)) {
               isDraggingColor = false
@@ -510,8 +519,9 @@ struct ColorOrganizerRoot: View {
           }
         }
 
-        SetupContinueButton(title: completionButtonTitle ?? "Next", isEnabled: !categories.isEmpty)
-        {
+        SetupContinueButton(
+          title: completionButtonTitle ?? String(localized: "Next"), isEnabled: !categories.isEmpty
+        ) {
           trackColorsCompletion()
           categoryStore.persist()
           onDismiss?()
