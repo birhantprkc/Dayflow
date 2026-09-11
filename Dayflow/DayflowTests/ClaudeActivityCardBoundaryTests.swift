@@ -235,6 +235,38 @@ final class ClaudeActivityCardBoundaryTests: XCTestCase {
     XCTAssertEqual(plan.context.existingCards.map(\.title), ["Boundary card", "Latest card"])
   }
 
+  func testRoundedCardEndRequiresSourceEvidenceToRecoverConnection() {
+    let previousStart = localTimestamp(hour: 9, minute: 0)
+    let previousEnd = localTimestamp(hour: 9, minute: 14) + 54
+    let previousObservation = observation(
+      batchId: 1, start: previousStart, end: previousEnd, text: "Previous activity")
+
+    for testCase in [
+      (gapSeconds: 10, includesPreviousObservation: true, startsFresh: false),
+      (gapSeconds: 70, includesPreviousObservation: true, startsFresh: true),
+      (gapSeconds: 10, includesPreviousObservation: false, startsFresh: true),
+    ] {
+      let currentStart = previousEnd + testCase.gapSeconds
+      let currentObservation = observation(
+        batchId: 2, start: currentStart, end: currentStart + 15 * 60,
+        text: "Current activity")
+      let context = generationContext(
+        batchObservations: [currentObservation],
+        existingCards: [card(start: "9:00 AM", end: "9:14 AM", title: "Previous card")],
+        hasPreviousCardWithinFiveMinutes: true
+      )
+      let observations =
+        testCase.includesPreviousObservation
+        ? [previousObservation, currentObservation] : [currentObservation]
+
+      let plan = provider.makeClaudeCardGenerationPlan(
+        observations: observations, context: context)
+
+      XCTAssertEqual(plan.requiresSingleCard, testCase.startsFresh, "\(testCase)")
+      XCTAssertEqual(plan.context.existingCards.count, testCase.startsFresh ? 0 : 1)
+    }
+  }
+
   func testShortIslandAcrossMaterialGapStartsFreshSegment() {
     let currentObservation = observation(
       batchId: 2,
@@ -321,17 +353,17 @@ final class ClaudeActivityCardBoundaryTests: XCTestCase {
     )
 
     XCTAssertTrue(
-      prompt.contains("Every card, including the final card, must be 10-60 minutes")
+      prompt.contains("Each card must be 10–60 minutes")
     )
-    XCTAssertTrue(prompt.contains("Absorb a 1-4-minute moment into the longer adjacent episode"))
+    XCTAssertTrue(prompt.contains("Absorb interruptions under five minutes"))
     XCTAssertTrue(
       prompt.contains(
-        "For a distinct 5-9-minute episode, borrow only enough adjacent minutes to reach 10"
+        "a distinct 5–9-minute episode may borrow the minimum neighboring minutes to reach ten"
       )
     )
     XCTAssertTrue(
       prompt.contains(
-        "Split a sustained immediate-goal change when both cards remain at least 10 minutes"
+        "if the neighboring cards remain at least ten"
       )
     )
   }
