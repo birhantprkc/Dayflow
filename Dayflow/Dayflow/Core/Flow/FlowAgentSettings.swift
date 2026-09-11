@@ -75,7 +75,7 @@ final class FlowAgentSettings: ObservableObject {
     let tick = d.double(forKey: "flowAgentTickSeconds")
     tickSeconds = tick >= 5 ? tick : 15
     let height = d.integer(forKey: "flowAgentShotHeight")
-    screenshotHeight = height >= 240 ? height : 720
+    screenshotHeight = height >= 240 ? height : 1080
     let quality = d.double(forKey: "flowAgentJpegQuality")
     jpegQuality = quality > 0 ? quality : 0.6
     let failures = d.integer(forKey: "flowAgentMaxFailures")
@@ -130,7 +130,7 @@ final class FlowAgentSettings: ObservableObject {
     model = "gpt-6-astra"
     reasoningEffort = "low"
     tickSeconds = 15
-    screenshotHeight = 720
+    screenshotHeight = 1080
     jpegQuality = 0.6
     maxFailures = 3
     textOnly = false
