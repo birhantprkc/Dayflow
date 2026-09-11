@@ -58,8 +58,9 @@ struct AgentPlaybackView: View {
           .foregroundStyle(Color.accentColor)
         Text(
           setupStarted
-            ? (host.isReady ? "Your dashboard is ready" : "Set up Agents")
-            : "See how your agents spend their time"
+            ? (host.isReady
+              ? String(localized: "Your dashboard is ready") : String(localized: "Set up Agents"))
+            : String(localized: "See how your agents spend their time")
         )
         .font(.system(size: 28, weight: .semibold))
         Text("A timeline of your Codex and Claude Code sessions, right here in Dayflow.")
@@ -68,12 +69,17 @@ struct AgentPlaybackView: View {
 
         if !setupStarted {
           onboardingDetail(
-            "Working or waiting", "See when your agents are running and when they need your input.")
+            String(localized: "Working or waiting"),
+            String(localized: "See when your agents are running and when they need your input."))
           onboardingDetail(
-            "Your day, across projects", "Review sessions, token usage, and estimated API cost.")
+            String(localized: "Your day, across projects"),
+            String(localized: "Review sessions, token usage, and estimated API cost."))
           onboardingDetail(
-            "From logs on this Mac",
-            "Agents reads existing Codex and Claude Code session logs and processes them locally. No API key is needed."
+            String(localized: "From logs on this Mac"),
+            String(
+              localized:
+                "Agents reads existing Codex and Claude Code session logs and processes them locally. No API key is needed."
+            )
           )
           Button("Set up Agents") {
             setupStarted = true
@@ -96,12 +102,18 @@ struct AgentPlaybackView: View {
             .foregroundStyle(.secondary)
         } else if host.isReady {
           onboardingDetail(
-            "Start with today",
-            "Open the dashboard to explore your activity. Choose an earlier date to review past sessions."
+            String(localized: "Start with today"),
+            String(
+              localized:
+                "Open the dashboard to explore your activity. Choose an earlier date to review past sessions."
+            )
           )
           onboardingDetail(
-            "Don’t see any activity?",
-            "Run a task in Codex or Claude Code on this Mac, then return to Agents. Initial processing can take a little time."
+            String(localized: "Don’t see any activity?"),
+            String(
+              localized:
+                "Run a task in Codex or Claude Code on this Mac, then return to Agents. Initial processing can take a little time."
+            )
           )
           Button("Open Agents") { onboardingCompleted = true }
             .buttonStyle(.borderedProminent)
@@ -164,6 +176,9 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
   private let versionKey = "agentPlaybackLastWorkingVersion"
   let usage = AgentPlaybackUsage()
   private var launchStartedAt: TimeInterval?
+  private var attemptStartedAt = ProcessInfo.processInfo.systemUptime
+  private var requestedVersion = "latest"
+  private var fallbackFromAttempt: String?
 
   private enum FailureCategory: String {
     case preparation
@@ -204,7 +219,10 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
     if process == nil && error == nil { start() }
   }
 
-  func start() { launch(version: "latest", offline: false) }
+  func start() {
+    fallbackFromAttempt = nil
+    launch(version: "latest", offline: false)
+  }
 
   private func launch(version requestedVersion: String, offline: Bool) {
     stop()
@@ -214,12 +232,12 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
     pageLoaded = false
     version = nil
     isFallback = offline
-    launchStartedAt = ProcessInfo.processInfo.systemUptime
+    self.requestedVersion = requestedVersion
+    attemptStartedAt = ProcessInfo.processInfo.systemUptime
+    launchStartedAt = attemptStartedAt
     AnalyticsService.shared.capture(
       "agentplayback_launch_started",
-      [
-        "mode": offline ? "cached_fallback" : "latest"
-      ])
+      launchProperties)
     let id = attempt
     let process = Process()
     let pipe = Pipe()
@@ -247,8 +265,9 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
       setInterval(() => {
         if (!hostIsAlive()) { stop(); try { fs.unlinkSync(lease); } catch {} process.exit(0); }
       }, 1000).unref();
-      child.on('error', err => { console.error(err.message); process.exit(1); });
-      child.on('exit', code => { stop(); process.exit(code ?? 1); });
+      console.log('DAYFLOW_NODE=' + process.version + ' executable=' + process.execPath + ' cli=' + cli);
+      child.on('error', err => { console.error(err.stack ?? err.message); process.exit(1); });
+      child.on('exit', (code, signal) => { console.error('DAYFLOW_CHILD_EXIT code=' + code + ' signal=' + signal); stop(); process.exit(code ?? 1); });
       """
     let command = "node -e \(LoginShellRunner.shellEscape(wrapper)) \"$(command -v agentplayback)\""
     let package = LoginShellRunner.shellEscape("agentplayback@\(requestedVersion)")
@@ -269,7 +288,10 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
     do {
       try Data().write(to: lease)
     } catch {
-      fail("Couldn’t prepare AgentPlayback: \(error.localizedDescription)", category: .preparation)
+      fail(
+        String(localized: "Couldn’t prepare AgentPlayback: \(error.localizedDescription)"),
+        category: .preparation,
+        diagnostics: errorProperties(error))
       return
     }
     leaseURL = lease
@@ -284,7 +306,10 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
     do {
       try process.run()
     } catch {
-      fail("Couldn’t start AgentPlayback: \(error.localizedDescription)", category: .processLaunch)
+      fail(
+        String(localized: "Couldn’t start AgentPlayback: \(error.localizedDescription)"),
+        category: .processLaunch,
+        diagnostics: errorProperties(error))
       return
     }
     Task.detached { [weak self] in
@@ -303,7 +328,8 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
       do { try await Task.sleep(for: .seconds(120)) } catch { return }
       guard let self, self.attempt == id, !self.pageLoaded else { return }
       self.fail(
-        "AgentPlayback took too long to start. Check your connection and try again.",
+        String(
+          localized: "AgentPlayback took too long to start. Check your connection and try again."),
         category: .timeout)
     }
   }
@@ -356,7 +382,7 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
   private func exited(attempt id: UUID, status: Int32, reason: String) {
     guard id == attempt else { return }
     fail(
-      "AgentPlayback stopped (\(reason) \(status)).\n\n\(output.suffix(2000))",
+      String(localized: "AgentPlayback stopped (\(reason) \(status)).\n\n\(output.suffix(2000))"),
       category: status == 127 && version == nil ? .missingRuntime : .processExit,
       diagnostics: ["termination_status": Int(status), "termination_reason": reason])
   }
@@ -371,11 +397,18 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
       ? "page_loaded"
       : (origin != nil ? "url_received" : (version != nil ? "package_resolved" : "shell_or_npx"))
     properties["output_character_count"] = output.count
+    properties["process_running"] = process?.isRunning ?? false
+    properties["app_active"] = NSApp.isActive
+    properties["page_url"] = webView?.url?.absoluteString
+    properties["webview_loading"] = webView?.isLoading ?? false
+    properties["system_uptime_seconds"] = ProcessInfo.processInfo.systemUptime
     properties["login_shell"] = LoginShellRunner.userLoginShell.lastPathComponent
     properties["failure_category"] = category.rawValue
     properties["will_try_fallback"] =
       !isFallback && UserDefaults.standard.string(forKey: versionKey) != nil
     AgentPlaybackDiagnostics.record(message: message, output: output, properties: properties)
+    properties["error_message"] = message
+    properties["process_output"] = output
     if launchStartedAt != nil {
       properties["outcome"] = "failure"
       AnalyticsService.shared.capture("agentplayback_launch_completed", properties)
@@ -384,6 +417,7 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
       AnalyticsService.shared.capture("agentplayback_runtime_failed", properties)
     }
     if !isFallback, let saved = UserDefaults.standard.string(forKey: versionKey) {
+      fallbackFromAttempt = attempt.uuidString
       launch(version: saved, offline: true)
     } else {
       stop()
@@ -430,16 +464,45 @@ final class AgentPlaybackHost: NSObject, ObservableObject, WKNavigationDelegate,
     withError error: Error
   ) {
     guard webView === self.webView else { return }
-    fail("Couldn’t load AgentPlayback: \(error.localizedDescription)", category: .navigation)
+    fail(
+      String(localized: "Couldn’t load AgentPlayback: \(error.localizedDescription)"),
+      category: .navigation,
+      diagnostics: errorProperties(error))
+  }
+
+  func webView(
+    _ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error
+  ) {
+    guard webView === self.webView else { return }
+    fail(
+      String(localized: "AgentPlayback navigation failed: \(error.localizedDescription)"),
+      category: .navigation,
+      diagnostics: errorProperties(error))
+  }
+
+  private func errorProperties(_ error: Error) -> [String: Any] {
+    let error = error as NSError
+    return [
+      "error_domain": error.domain,
+      "error_code": error.code,
+      "error_details": String(reflecting: error),
+      "error_user_info": String(describing: error.userInfo),
+    ]
   }
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
     guard webView === self.webView else { return }
-    fail("AgentPlayback’s window stopped responding. Try again.", category: .webContentTerminated)
+    fail(
+      String(localized: "AgentPlayback’s window stopped responding. Try again."),
+      category: .webContentTerminated)
   }
 
   private var launchProperties: [String: Any] {
     var properties: [String: Any] = ["mode": isFallback ? "cached_fallback" : "latest"]
+    properties["attempt_id"] = attempt.uuidString
+    properties["requested_version"] = requestedVersion
+    properties["attempt_elapsed_seconds"] = ProcessInfo.processInfo.systemUptime - attemptStartedAt
+    if let fallbackFromAttempt { properties["fallback_from_attempt_id"] = fallbackFromAttempt }
     if let version { properties["agentplayback_version"] = version }
     if let launchStartedAt {
       properties["duration_seconds"] =
