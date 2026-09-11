@@ -14,7 +14,8 @@ import SwiftUI
 
 private let cachedScrubberTimeFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "h:mm a"
+  formatter.timeStyle = .short
+  formatter.dateStyle = .none
   return formatter
 }()
 
