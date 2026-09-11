@@ -207,7 +207,7 @@ struct WeeklyContextShiftComparisonSnapshot {
     series: [
       WeeklyContextShiftComparisonSeries(
         id: "distractions",
-        label: "Number of times distracted",
+        label: String(localized: "Number of times distracted"),
         colorHex: "FF8A8A",
         points: [
           .init(dayIndex: 0, value: 12),
@@ -220,7 +220,7 @@ struct WeeklyContextShiftComparisonSnapshot {
       ),
       WeeklyContextShiftComparisonSeries(
         id: "context-shifts",
-        label: "Number of context shifts",
+        label: String(localized: "Number of context shifts"),
         colorHex: "A78CFF",
         points: [
           .init(dayIndex: 0, value: 15),
@@ -233,7 +233,7 @@ struct WeeklyContextShiftComparisonSnapshot {
       ),
     ],
     insightText:
-      "Your interruptions are driven by context shifts and distractions.",
+      String(localized: "Your interruptions are driven by context shifts and distractions."),
     callToAction: "Pinpoint"
   )
 }
