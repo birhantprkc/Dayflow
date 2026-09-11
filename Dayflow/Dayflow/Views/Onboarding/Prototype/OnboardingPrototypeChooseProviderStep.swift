@@ -65,51 +65,54 @@ struct OnboardingPrototypeChooseProviderStep: View {
   private static let providers: [ComparisonProvider] = [
     ComparisonProvider(
       providerID: .dayflow,
-      title: "Dayflow Pro",
-      accuracy: RatedValue(text: "Best", rating: .best),
-      subscription: "7 day free trial",
-      ease: RatedValue(text: "Sign in and go", rating: .best),
-      notes: "Sync across devices"
+      title: String(localized: "Dayflow Pro"),
+      accuracy: RatedValue(text: String(localized: "Best"), rating: .best),
+      subscription: String(localized: "7 day free trial"),
+      ease: RatedValue(text: String(localized: "Sign in and go"), rating: .best),
+      notes: String(localized: "Sync across devices")
     ),
     ComparisonProvider(
       providerID: .chatGPT,
-      title: "ChatGPT",
-      accuracy: RatedValue(text: "Best", rating: .best),
-      subscription: "ChatGPT paid subscription",
-      ease: RatedValue(text: "Install Codex CLI", rating: .medium),
-      notes: "Uses your ChatGPT subscription and less than 1% of your daily limit."
+      title: String(localized: "ChatGPT"),
+      accuracy: RatedValue(text: String(localized: "Best"), rating: .best),
+      subscription: String(localized: "ChatGPT paid subscription"),
+      ease: RatedValue(text: String(localized: "Install Codex CLI"), rating: .medium),
+      notes: String(
+        localized: "Uses your ChatGPT subscription and less than 1% of your daily limit.")
     ),
     ComparisonProvider(
       providerID: .claude,
-      title: "Claude",
-      accuracy: RatedValue(text: "Best", rating: .best),
-      subscription: "Claude paid subscription",
-      ease: RatedValue(text: "Install Claude CLI", rating: .medium),
-      notes: "Uses your Claude subscription and less than 1% of your daily limit."
+      title: String(localized: "Claude"),
+      accuracy: RatedValue(text: String(localized: "Best"), rating: .best),
+      subscription: String(localized: "Claude paid subscription"),
+      ease: RatedValue(text: String(localized: "Install Claude CLI"), rating: .medium),
+      notes: String(
+        localized: "Uses your Claude subscription and less than 1% of your daily limit.")
     ),
     ComparisonProvider(
       providerID: .gemini,
-      title: "Gemini",
-      accuracy: RatedValue(text: "Medium", rating: .medium),
-      subscription: "Free",
-      ease: RatedValue(text: "API key", rating: .medium),
-      notes: "Uses Gemini free tier."
+      title: String(localized: "Gemini"),
+      accuracy: RatedValue(text: String(localized: "Medium"), rating: .medium),
+      subscription: String(localized: "Free"),
+      ease: RatedValue(text: String(localized: "API key"), rating: .medium),
+      notes: String(localized: "Uses Gemini free tier.")
     ),
     ComparisonProvider(
       providerID: .openAICompatible,
-      title: "OpenRouter / Custom",
-      accuracy: RatedValue(text: "Varies", rating: .medium),
-      subscription: "API credits",
-      ease: RatedValue(text: "API key and model", rating: .medium),
-      notes: "Uses OpenRouter or any OpenAI-compatible endpoint."
+      title: String(localized: "OpenRouter / Custom"),
+      accuracy: RatedValue(text: String(localized: "Varies"), rating: .medium),
+      subscription: String(localized: "API credits"),
+      ease: RatedValue(text: String(localized: "API key and model"), rating: .medium),
+      notes: String(localized: "Uses OpenRouter or any OpenAI-compatible endpoint.")
     ),
     ComparisonProvider(
       providerID: .local,
-      title: "Local AI",
-      accuracy: RatedValue(text: "Decent", rating: .basic),
-      subscription: "Free",
-      ease: RatedValue(text: "Extensive setup", rating: .basic),
-      notes: "Requires 16GB+ RAM, 4GB free disk space, M1 or later chip preferred"
+      title: String(localized: "Local AI"),
+      accuracy: RatedValue(text: String(localized: "Decent"), rating: .basic),
+      subscription: String(localized: "Free"),
+      ease: RatedValue(text: String(localized: "Extensive setup"), rating: .basic),
+      notes: String(
+        localized: "Requires 16GB+ RAM, 4GB free disk space, M1 or later chip preferred")
     ),
   ]
 
@@ -198,7 +201,7 @@ struct OnboardingPrototypeChooseProviderStep: View {
       }
 
       GridRow {
-        rowLabel("Model accuracy")
+        rowLabel(String(localized: "Model accuracy"))
         ForEach(Self.providers) { provider in
           ratedCell(provider.accuracy)
         }
@@ -207,7 +210,7 @@ struct OnboardingPrototypeChooseProviderStep: View {
       rowSeparator
 
       GridRow {
-        rowLabel("Subscription requirements")
+        rowLabel(String(localized: "Subscription requirements"))
         ForEach(Self.providers) { provider in
           subscriptionCell(provider.subscription)
         }
@@ -216,7 +219,7 @@ struct OnboardingPrototypeChooseProviderStep: View {
       rowSeparator
 
       GridRow {
-        rowLabel("Ease of set up")
+        rowLabel(String(localized: "Ease of set up"))
         ForEach(Self.providers) { provider in
           ratedCell(easeValue(for: provider))
         }
@@ -225,7 +228,7 @@ struct OnboardingPrototypeChooseProviderStep: View {
       rowSeparator
 
       GridRow(alignment: .top) {
-        rowLabel("Additional notes")
+        rowLabel(String(localized: "Additional notes"))
         ForEach(Self.providers) { provider in
           notesCell(provider.notes)
         }
@@ -326,10 +329,10 @@ struct OnboardingPrototypeChooseProviderStep: View {
 
   private func easeValue(for provider: ComparisonProvider) -> RatedValue {
     if provider.providerID == .chatGPT, isCodexCLIInstalled {
-      return RatedValue(text: "CLI installed", rating: .best)
+      return RatedValue(text: String(localized: "CLI installed"), rating: .best)
     }
     if provider.providerID == .claude, isClaudeCLIInstalled {
-      return RatedValue(text: "CLI installed", rating: .best)
+      return RatedValue(text: String(localized: "CLI installed"), rating: .best)
     }
     return provider.ease
   }
