@@ -15,7 +15,8 @@ enum CodexPromptPreferences {
     guard let data = defaults.data(forKey: overridesKey) else {
       return ActivityCardPromptOverrides()
     }
-    guard let overrides = try? JSONDecoder().decode(ActivityCardPromptOverrides.self, from: data) else {
+    guard let overrides = try? JSONDecoder().decode(ActivityCardPromptOverrides.self, from: data)
+    else {
       return ActivityCardPromptOverrides()
     }
     return overrides
@@ -64,105 +65,42 @@ enum CodexPromptPreferences {
 }
 
 enum CodexPromptDefaults {
+  // Selection evidence is generation-only; ActivityCardData ignores this intermediate field.
   static let titleBlock = """
-    TITLE GOAL
+    Write each title as the natural answer to “What did I spend this time doing?” Use a short phrase in sentence case, usually beginning with an activity verb. Name the main activity and its familiar subject. Add a method, person, comparison, creative treatment, or version only when it meaningfully distinguishes this episode. Specificity is optional: keep a title simple when the activity already identifies it. Prefer a recognizable approach over a list of implementation terms or the platform where work ran. The title should be understandable on its own tomorrow, accurate to the observed activity, and consistent with neighboring titles.
 
-    Write one glanceable, evidence-backed memory cue for each card. The user should recognize what happened next week without opening the summary. Usually use 4-10 words.
+    <examples>
+    Invented examples of the desired level of abstraction:
+    <example>Evidence: investigated failed OAuth callbacks and Redis sessions for a product named Cedar. Title: Fixing Cedar sign-in.</example>
+    <example>Evidence: tested whether combining radar and satellite readings improved Rainbird forecasts. Title: Testing radar and satellite fusion for Rainbird forecasts.</example>
+    <example>Evidence: revised the aims and budget of a grant application through an editor and assistant. Title: Revising the grant proposal.</example>
+    <example>Evidence: watched basketball clips for twenty minutes and briefly checked a parcel. Title: Watching basketball highlights.</example>
+    <example>Evidence: read advice on insulating an attic; no installation observed. Title: Researching attic insulation.</example>
+    </examples>
 
-    BOUNDARIES BEFORE TITLES
+    For EVERY card, after its detailedSummary and before its title, output a titleEvidence object with activities (an array of {activity, minutes}), selectedActivity, and familiarSubject. Account for the entire interval, with approximate minutes summing to the card duration. Combine recurring visits to the same actual task; different subjects remain separate even when they share an assistant, browser, or broad project. Count foreground interaction, not background windows. Select the activity with the most supported time. Name that activity alone when it represents at least half of the interval. Put side activities only in the summaries. Name the selected activity and familiar subject; preserve a central approach or comparison when it helps distinguish the work. Omit incidental tools and brief detours.
 
-    Re-segment the supplied evidence before choosing title words; previous cards and their 15-minute seams are drafts. Keep a meeting or huddle separate from subsequent hands-on artifact work when both sides can be at least 10 minutes, even if they share a project. When a direct conversation begins near a draft seam, continues into the next batch, and then gives way to a different browsing episode, place the boundary after the conversation ends when both resulting cards can be at least 10 minutes. After that pass, freeze boundaries—proper names and title phrasing must not move them.
+    Invented example: titleEvidence: {"activities":[{"activity":"Reading about attic insulation","minutes":18},{"activity":"Checking a parcel","minutes":2}],"selectedActivity":"Reading about attic insulation","familiarSubject":"attic insulation"}; title: "Researching attic insulation".
 
-    CUE PRIORITY
+    Only assign a topic to an activity when the foreground evidence establishes it. A browser article behind a messaging window does not establish what the messages discuss. Preserve an unknown topic as unknown rather than borrowing nearby content.
 
-    1. Re-read only the evidence inside each final card.
-    2. Choose the sustained goal or strongest recurring cue, weighting duration and deliberate interaction over novelty.
-    3. Add the details that distinguish the episode: person and topic, familiar project, named artifact, comparison subjects, game mode or character, service, place, cadence, or real-world target.
-    4. A deliberate completion such as configuring a scheduled task may outrank longer preparatory browsing when it is the clearest reconstructable outcome.
-    5. Prefer what the user acted on over a passive notification, advertisement, or briefly visible noun.
+    A unique largest activity is not necessarily representative. If it occupies less than half the card, revisit whether a supported boundary can separate activities. If the duration rules require a mixed card, use a short honest description of the mixture or two substantial activities; do not name a tiny plurality as though it fills the interval. Group tasks under a shared purpose only when that purpose is supported, rather than assuming everything in the same project serves one goal.
 
-    FOCUSED CARDS
+    Use an everyday description of what the project does when an internal dataset name or technical method would make the title hard to recognize. Keep familiar product names and central methods when useful. If comparing named models is the task itself, their names can be the useful detail; if models are merely tools, leave them in the summary.
 
-    - For a meeting or huddle, name the interaction type, person, and main project or decision topic. Do not append secondary work.
-    - When the evidence says a scheduled, daily, or recurring check was configured, title that setup with its cadence, named service, and target. Do not dilute it with surrounding searches or detours.
-    - For a sustained comparison, name two to four recurring subjects and the artifact type instead of saying “AI models,” “outputs,” or “research.”
-    - For launch or storyboard work, preserve the named treatment and artifact type—frames, storyboards, or clips—rather than collapsing it to “visuals.”
-    - For a game, prefer the supported mode, character, and memorable observed event over a generic game-session label.
-    - When several tools support one artifact, name the artifact rather than the tools.
+    Match the verb to the evidence: drafting is not sending, testing is not a proven improvement, and a static page without interaction is not active browsing. Read neighboring titles together: preserve meaningful differences between planning, editing, and reviewing, without inventing distinctions or forcing every title to carry a qualifier.
 
-    MIXED CARDS
-
-    - For diffuse passive switching with no deliberate thread, use an honest “Scattered” title with recurring channels such as email, X, news, or YouTube. Do not promote one unusual product or article.
-    - For a direct conversation, include the observed person and salient topic rather than “catch-up”; the person usually matters more than the messaging app.
-    - For intentional browsing, preserve observed proper names for destinations, stores, artifacts, and benchmark sites. Prefer “Tokyo flower shops and Design Bench” over “Japanese culture and AI designs.”
-
-    GROUNDING
-
-    Describe only observed actions and outcomes. Reading is not deciding, reviewing is not creating, investigating is not fixing, and drafting is not sending. Never invent a differentiator.
-
-    PATTERN EXAMPLES
-
-    - “Slack huddle with Priya on checkout launch”
-    - “Set up daily Zillow rent checks”
-    - “Compared Runway, Pika, Veo, and Luma clips”
-    - “Maya’s sick-day texts and weekend plans”
-    - “Kyoto ceramics, screenplay notes, and Design Bench”
-
-    FINAL CHECK
-
-    Reject a title that foregrounds a shorter passive detour, copies an old title after evidence changed, claims an unsupported outcome, omits an observed person from a conversation cue, or stays generic despite a stronger supported proper name.
+    titleEvidence is intermediate working data; the title is the short user-facing label. Return all required card fields, including title, distractions, and appSites, in the final JSON array.
     """
 
   static let summaryBlock = """
     SUMMARIES
-
-    2-3 sentences max. First person without "I". Just state what happened.
-
-    Good:
-    - "Refactored user auth module in React, added OAuth support. Hit CORS issues with the backend API."
-    - "Designed landing page mockups in Figma. Exported assets and started implementing in Next.js."
-    - "Searched flights to Tokyo, coordinated dates with Evan and Anthony over Messages. Looked at Shibuya apartments on Blueground."
-
-    Bad:
-    - "Kicked off the morning by diving into design work before transitioning to development tasks." (filler, vague)
-    - "Started with refactoring before moving on to debugging some issues." (wordy, no specifics)
-    - "The session involved multiple context switches between different parts of the application." (says nothing)
-
-    Never use:
-    - "kicked off", "dove into", "started with", "began by"
-    - Third person ("The session", "The work")
-    - Mental states or assumptions about intent
+    Write 2–3 factual sentences in first person without "I". State the main activity and meaningful secondary details. Preserve what happened without adding claims of completion.
     """
 
   static let detailedSummaryBlock = """
-    DETAILED SUMMARY
-
-    Granular activity log. This is the "show me exactly what happened" view.
-
-    Format:
-    [H:MM AM/PM] - [H:MM AM/PM]: [specific action] [in app/tool] [on what]
-    Each line should be one sentence (~25 words max). Be concise but detailed.
-
-    Include:
-    - Specific file/document names when visible
-    - Page titles, tabs, search queries
-    - Actions: opened, edited, scrolled, searched, replied, watched
-    - Content context: what topic, what section, who you messaged
-
-    Good example:
-    "7:00 AM - 7:08 AM: edited "Q4 Launch Plan" in Notion, added timeline section
-    7:08 AM - 7:10 AM: replied to Mike in Slack #engineering
-    7:10 AM - 7:12 AM: scrolled X home feed
-    7:12 AM - 7:18 AM: back to Notion, wrote launch risks section
-    7:18 AM - 7:20 AM: searched Google "feature flag best practices"
-    7:20 AM - 7:25 AM: read LaunchDarkly docs
-    7:25 AM - 7:30 AM: added feature flag notes to Notion doc"
-
-    Bad example:
-    "7:00 AM - 7:30 AM writing Notion doc
-    7:30 AM - 7:35: AM Slack
-    7:35 AM - 8:00 AM coding"
-    (Too coarse — what doc? which Slack channel? coding what?)
+    DETAILED SUMMARIES
+    Write a chronological log of timestamped activity lines. Each line states the concrete action, subject, and relevant application or site. Include substantive secondary activities and specific details here that the title omits. Encode line breaks with valid JSON escapes.
     """
 }
 
