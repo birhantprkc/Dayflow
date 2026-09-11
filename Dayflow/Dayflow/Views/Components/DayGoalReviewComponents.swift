@@ -87,7 +87,7 @@ struct GoalReviewCard: View {
   }
 
   private var resultBadge: some View {
-    Text(succeeded ? "NAILED IT" : "MISSED")
+    Text(succeeded ? String(localized: "NAILED IT") : String(localized: "MISSED"))
       .font(.custom("Figtree", size: 10).weight(.heavy))
       .foregroundColor(succeeded ? Color(hex: "4AB43F") : Color(hex: "FA8282"))
       .padding(.horizontal, 15)
