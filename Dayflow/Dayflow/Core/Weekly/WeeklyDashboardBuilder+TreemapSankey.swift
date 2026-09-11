@@ -55,7 +55,7 @@ extension WeeklyDashboardBuilder {
       .sorted(by: WeeklyTreemapCategory.displayOrder)
 
     return WeeklyTreemapSnapshot(
-      title: "Most used per category",
+      title: String(localized: "Most used per category"),
       categories: Array(categories.prefix(5))
     )
   }
@@ -113,7 +113,7 @@ extension WeeklyDashboardBuilder {
 
     return WeeklySankeySnapshot(
       id: "weekly-sankey-\(DateFormatter.yyyyMMdd.string(from: weekRange.weekStart))",
-      seedLabel: "Timeline data",
+      seedLabel: String(localized: "Timeline data"),
       sourceName: sankeySourceName(for: weekRange),
       categories: categoryBuckets.categories.map {
         WeeklySankeySnapshotCategory(
@@ -223,12 +223,12 @@ extension WeeklyDashboardBuilder {
 
   private static func sankeySourceName(for weekRange: WeeklyDateRange) -> String {
     let formatter = DateFormatter()
-    formatter.dateFormat = "MMM d"
+    formatter.setLocalizedDateFormatFromTemplate("MMMd")
     let start = formatter.string(from: weekRange.weekStart)
     let endDate =
       calendar.date(byAdding: .day, value: 6, to: weekRange.weekStart) ?? weekRange.weekEnd
     let end = formatter.string(from: endDate)
-    return "\(start)-\(end)"
+    return String(localized: "\(start)-\(end)")
   }
 }
 
