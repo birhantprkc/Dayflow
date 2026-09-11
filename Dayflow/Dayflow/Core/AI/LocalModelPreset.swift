@@ -20,8 +20,8 @@ enum LocalModelPreset: String, CaseIterable, Codable {
 
   var displayName: String {
     switch self {
-    case .qwen3VL4B: return "Qwen3-VL 4B"
-    case .qwen25VL3B: return "Qwen2.5-VL 3B"
+    case .qwen3VL4B: return String(localized: "Qwen3-VL 4B")
+    case .qwen25VL3B: return String(localized: "Qwen2.5-VL 3B")
     }
   }
 
