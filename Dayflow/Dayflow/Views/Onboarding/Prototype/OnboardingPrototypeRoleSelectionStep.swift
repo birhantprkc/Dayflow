@@ -128,12 +128,25 @@ struct OnboardingPrototypeRoleSelectionStep: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
+  private func roleTitle(_ role: String) -> String {
+    switch role {
+    case "Software Engineer": return String(localized: "Software Engineer")
+    case "Founder / Executive": return String(localized: "Founder / Executive")
+    case "Designer": return String(localized: "Designer")
+    case "Student": return String(localized: "Student")
+    case "Product Manager": return String(localized: "Product Manager")
+    case "Data Scientist": return String(localized: "Data Scientist")
+    case "Other": return String(localized: "Other")
+    default: return role
+    }
+  }
+
   private func roleChip(_ role: String) -> some View {
     let isSelected = selectedRole == role
     return Button {
       selectedRole = role
     } label: {
-      Text(role)
+      Text(roleTitle(role))
         .font(.custom("Figtree", size: 16))
         .foregroundColor(Color(hex: "634D42"))
         .padding(.horizontal, 20)
