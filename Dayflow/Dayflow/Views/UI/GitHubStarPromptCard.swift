@@ -66,8 +66,11 @@ struct GitHubStarPromptCard: View {
               Image(systemName: "star")
                 .font(.system(size: 14, weight: .medium))
             }
-            Text(isStarring ? "Starring…" : "Give a star on GitHub")
-              .font(.custom("Figtree", size: 14).weight(.medium))
+            Text(
+              isStarring
+                ? String(localized: "Starring…") : String(localized: "Give a star on GitHub")
+            )
+            .font(.custom("Figtree", size: 14).weight(.medium))
           }
           .foregroundStyle(theme.primaryButtonText)
           .frame(maxWidth: .infinity)
