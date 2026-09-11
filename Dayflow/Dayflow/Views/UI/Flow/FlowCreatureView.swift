@@ -102,7 +102,10 @@ enum FlowCreatureClip: String {
 final class FlowCreaturePlayer {
   static let shared = FlowCreaturePlayer()
 
-  let player = AVPlayer()
+  /// A queue player so the next clip (or the next copy of the loop) is
+  /// already loaded when the current one ends. Swapping items on a plain
+  /// AVPlayer left a blank frame at every hand-off, which read as a flicker.
+  let player = AVQueuePlayer()
 
   private(set) var currentClip: FlowCreatureClip?
   /// Fired whenever the clip changes so the layer view can re-anchor it.
@@ -111,14 +114,23 @@ final class FlowCreaturePlayer {
   private var onceCompletion: (() -> Void)?
   /// Bumped per play request so a stale timeout can't fire a completion.
   private var playGeneration = 0
+  /// Which clip each queued item plays, so the queue advancing can update
+  /// `currentClip` (and the canvas anchor) at the exact hand-off.
+  private var clipsByItem: [ObjectIdentifier: FlowCreatureClip] = [:]
+  private var currentItemObservation: NSKeyValueObservation?
 
   private init() {
-    player.actionAtItemEnd = .none
+    player.actionAtItemEnd = .advance
     NotificationCenter.default.addObserver(
       forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main
     ) { [weak self] note in
       MainActor.assumeIsolated {
         self?.itemEnded(note)
+      }
+    }
+    currentItemObservation = player.observe(\.currentItem, options: [.new]) { [weak self] _, _ in
+      MainActor.assumeIsolated {
+        self?.currentItemChanged()
       }
     }
   }
@@ -129,7 +141,8 @@ final class FlowCreaturePlayer {
     playGeneration += 1
     onceCompletion = nil
     loopClip = loop
-    setItem(clip)
+    startQueue(with: clip)
+    if let loop { enqueue(loop) }
   }
 
   /// If `loop` is already what's playing (or queued to loop), leave it alone;
@@ -147,7 +160,7 @@ final class FlowCreaturePlayer {
     let gen = playGeneration
     loopClip = nil
     onceCompletion = completion
-    setItem(clip)
+    startQueue(with: clip)
 
     // Longest exit clip is ~7s; anything past 10s means playback stalled.
     Task { @MainActor in
@@ -158,8 +171,8 @@ final class FlowCreaturePlayer {
     }
   }
 
-  private func setItem(_ clip: FlowCreatureClip) {
-    guard let url = clip.url else {
+  private func startQueue(with clip: FlowCreatureClip) {
+    guard clip.url != nil else {
       // Missing resource: fail soft, run any pending completion.
       let pending = onceCompletion
       onceCompletion = nil
@@ -168,26 +181,49 @@ final class FlowCreaturePlayer {
       pending?()
       return
     }
+    player.pause()
+    player.removeAllItems()
+    clipsByItem.removeAll()
     currentClip = clip
     onClipChange?(clip)
-    player.replaceCurrentItem(with: AVPlayerItem(url: url))
+    enqueue(clip)
     player.play()
   }
 
-  private func itemEnded(_ note: Notification) {
-    guard let item = note.object as? AVPlayerItem, item === player.currentItem else { return }
+  @discardableResult
+  private func enqueue(_ clip: FlowCreatureClip) -> AVPlayerItem? {
+    guard let url = clip.url else { return nil }
+    let item = AVPlayerItem(url: url)
+    guard player.canInsert(item, after: nil) else { return nil }
+    clipsByItem[ObjectIdentifier(item)] = clip
+    player.insert(item, after: nil)
+    return item
+  }
 
-    if let pending = onceCompletion {
-      onceCompletion = nil
-      pending()
+  private func currentItemChanged() {
+    guard let item = player.currentItem, let clip = clipsByItem[ObjectIdentifier(item)] else {
       return
     }
-    guard let loopClip else { return }
-    if currentClip == loopClip {
-      player.seek(to: .zero)
-      player.play()
-    } else {
-      setItem(loopClip)
+    if clip != currentClip {
+      currentClip = clip
+      onClipChange?(clip)
+    }
+    // Keep one spare copy of the loop queued so it never runs dry.
+    if let loopClip, clip == loopClip, player.items().count < 2 {
+      enqueue(loopClip)
+    }
+    // Drop bookkeeping for items that already played.
+    let live = Set(player.items().map { ObjectIdentifier($0) })
+    clipsByItem = clipsByItem.filter { live.contains($0.key) }
+  }
+
+  private func itemEnded(_ note: Notification) {
+    guard let item = note.object as? AVPlayerItem, clipsByItem[ObjectIdentifier(item)] != nil else {
+      return
+    }
+    if let pending = onceCompletion, player.items().count <= 1 {
+      onceCompletion = nil
+      pending()
     }
   }
 }

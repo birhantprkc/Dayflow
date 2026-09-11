@@ -294,8 +294,21 @@ struct FlowDebugPanel: View {
         slider(
           "Praise stays \(Int(settings.praiseSeconds))s", value: $settings.praiseSeconds,
           in: 1...20, step: 1)
+        HStack(spacing: 8) {
+          Text(
+            String(
+              format: "Drag offsets: side %.0f · top %.0f · peek %.0f", settings.sideOffsetY,
+              settings.topOffsetX, settings.peekOffsetX)
+          )
+          .font(.system(size: 10, design: .monospaced))
+          .foregroundColor(.white.opacity(0.7))
+          smallButton("Reset positions") {
+            settings.resetPositions()
+            FlowOverlayController.shared.repositionIfVisible()
+          }
+        }
         Text(
-          "Simulate distraction needs an active session; the trigger buttons above work any time."
+          "Hover the creature to reveal its bubble and replies; drag it to move where it comes from (side: up/down, top layouts: left/right). Simulate distraction needs an active session; the trigger buttons above work any time."
         )
         .font(.system(size: 10))
         .foregroundColor(.white.opacity(0.6))

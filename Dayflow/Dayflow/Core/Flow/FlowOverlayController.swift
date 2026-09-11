@@ -127,20 +127,75 @@ final class FlowOverlayController {
   }
 
   private func position(_ panel: NSPanel) {
-    guard let screen = NSScreen.main else { return }
+    guard let origin = defaultOrigin(for: panel) else { return }
+    let variant = FlowSessionMirror.shared.overlayVariant
+    let offset = FlowAgentSettings.shared.positionOffset(for: variant)
+    let target =
+      variant.anchorsToTop
+      ? NSPoint(x: origin.x + offset, y: origin.y)
+      : NSPoint(x: origin.x, y: origin.y + offset)
+    panel.setFrameOrigin(clamp(target, panel: panel))
+  }
+
+  /// Where the panel sits with no user offset: flush right, at the bottom
+  /// for the side layout or under the menu bar for the from-above ones.
+  private func defaultOrigin(for panel: NSPanel) -> NSPoint? {
+    guard let screen = NSScreen.main else { return nil }
     let visible = screen.visibleFrame
     let size = panel.frame.size
-    let origin: NSPoint
     if FlowSessionMirror.shared.overlayVariant.anchorsToTop {
       // From-above variants: the panel's top edge sits at the very top of
       // the screen (under the menu bar) so the creature drops out of it.
-      origin = NSPoint(x: visible.maxX - size.width, y: screen.frame.maxY - size.height)
-    } else {
-      // Bottom-right, flush with the screen edge so the creature art clips at
-      // the edge exactly like the Figma mock (it "peeks in" from offscreen).
-      origin = NSPoint(x: visible.maxX - size.width, y: visible.minY + 8)
+      return NSPoint(x: visible.maxX - size.width, y: screen.frame.maxY - size.height)
     }
-    panel.setFrameOrigin(origin)
+    // Bottom-right, flush with the screen edge so the creature art clips at
+    // the edge exactly like the Figma mock (it "peeks in" from offscreen).
+    return NSPoint(x: visible.maxX - size.width, y: visible.minY + 8)
+  }
+
+  /// Keep the creature on screen: the side layout may only slide along the
+  /// right edge, the from-above layouts along the top edge.
+  private func clamp(_ origin: NSPoint, panel: NSPanel) -> NSPoint {
+    guard let screen = NSScreen.main, let base = defaultOrigin(for: panel) else { return origin }
+    let visible = screen.visibleFrame
+    let size = panel.frame.size
+    if FlowSessionMirror.shared.overlayVariant.anchorsToTop {
+      let x = min(base.x, max(visible.minX, origin.x))
+      return NSPoint(x: x, y: base.y)
+    }
+    let y = min(visible.maxY - size.height, max(visible.minY, origin.y))
+    return NSPoint(x: base.x, y: y)
+  }
+
+  // MARK: - Dragging the creature
+
+  private var dragOrigin: NSPoint?
+
+  /// The creature hotspot calls these while the user drags: the panel follows
+  /// along its allowed axis, and the final offset is saved for the layout.
+  func beginDrag() {
+    dragOrigin = panel?.frame.origin
+  }
+
+  func drag(by delta: NSPoint) {
+    guard let panel, let dragOrigin else { return }
+    let target = NSPoint(x: dragOrigin.x + delta.x, y: dragOrigin.y + delta.y)
+    panel.setFrameOrigin(clamp(target, panel: panel))
+  }
+
+  func endDrag() {
+    defer { dragOrigin = nil }
+    guard let panel, dragOrigin != nil, let base = defaultOrigin(for: panel) else { return }
+    let variant = FlowSessionMirror.shared.overlayVariant
+    let offset =
+      variant.anchorsToTop ? panel.frame.origin.x - base.x : panel.frame.origin.y - base.y
+    FlowAgentSettings.shared.setPositionOffset(offset, for: variant)
+  }
+
+  /// Re-apply the saved position (debug panel "reset positions").
+  func repositionIfVisible() {
+    guard let panel, panel.isVisible else { return }
+    position(panel)
   }
 }
 

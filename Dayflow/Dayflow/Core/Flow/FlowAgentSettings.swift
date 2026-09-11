@@ -52,6 +52,12 @@ final class FlowAgentSettings: ObservableObject {
   }
   @Published var toastSeconds: Double { didSet { set(toastSeconds, "flowToastSeconds") } }
   @Published var praiseSeconds: Double { didSet { set(praiseSeconds, "flowPraiseSeconds") } }
+  /// Where the creature comes in, as a drag offset from the default corner:
+  /// the side layout moves up/down, the from-above layouts move left/right.
+  /// Set by dragging the creature on the desktop.
+  @Published var sideOffsetY: Double { didSet { set(sideOffsetY, "flowOverlaySideOffsetY") } }
+  @Published var topOffsetX: Double { didSet { set(topOffsetX, "flowOverlayTopOffsetX") } }
+  @Published var peekOffsetX: Double { didSet { set(peekOffsetX, "flowOverlayPeekOffsetX") } }
   @Published var nudgeVariant: FlowNudgeVariant {
     didSet {
       if FlowNudgeVariant.current != nudgeVariant { FlowNudgeVariant.current = nudgeVariant }
@@ -85,7 +91,33 @@ final class FlowAgentSettings: ObservableObject {
     toastSeconds = toast > 0 ? toast : 4
     let praise = d.double(forKey: "flowPraiseSeconds")
     praiseSeconds = praise > 0 ? praise : 5
+    sideOffsetY = d.double(forKey: "flowOverlaySideOffsetY")
+    topOffsetX = d.double(forKey: "flowOverlayTopOffsetX")
+    peekOffsetX = d.double(forKey: "flowOverlayPeekOffsetX")
     nudgeVariant = FlowNudgeVariant.current
+  }
+
+  /// Drag offset for a layout (x for the from-above layouts, y for side).
+  func positionOffset(for variant: FlowNudgeVariant) -> Double {
+    switch variant {
+    case .side: return sideOffsetY
+    case .top: return topOffsetX
+    case .peek: return peekOffsetX
+    }
+  }
+
+  func setPositionOffset(_ value: Double, for variant: FlowNudgeVariant) {
+    switch variant {
+    case .side: sideOffsetY = value
+    case .top: topOffsetX = value
+    case .peek: peekOffsetX = value
+    }
+  }
+
+  func resetPositions() {
+    sideOffsetY = 0
+    topOffsetX = 0
+    peekOffsetX = 0
   }
 
   private func set(_ value: Any, _ key: String) {
