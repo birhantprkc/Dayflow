@@ -205,8 +205,9 @@ struct DayGoalFlowView: View {
 
       GoalReviewCard(
         kind: .focus,
-        title: "Focus target: \(formatDuration(review.plan.focusTargetDuration))",
-        subtitle: "Time spent: \(formatDuration(review.focusDuration))",
+        title: String(
+          localized: "Focus target: \(formatDuration(review.plan.focusTargetDuration))"),
+        subtitle: String(localized: "Time spent: \(formatDuration(review.focusDuration))"),
         targetDuration: review.plan.focusTargetDuration,
         actualDuration: review.focusDuration,
         categories: review.focusCategories
@@ -216,8 +217,10 @@ struct DayGoalFlowView: View {
 
       GoalReviewCard(
         kind: .distraction,
-        title: "Distraction limit: \(formatDuration(review.plan.distractionLimitDuration))",
-        subtitle: "Time spent distracted: \(formatDuration(review.distractedDuration))",
+        title: String(
+          localized: "Distraction limit: \(formatDuration(review.plan.distractionLimitDuration))"),
+        subtitle: String(
+          localized: "Time spent distracted: \(formatDuration(review.distractedDuration))"),
         targetDuration: review.plan.distractionLimitDuration,
         actualDuration: review.distractedDuration,
         categories: []
@@ -225,7 +228,7 @@ struct DayGoalFlowView: View {
       .frame(width: 388, height: 123)
       .position(x: 600, y: 491.5)
 
-      primaryButton("Set today’s goals") {
+      primaryButton(String(localized: "Set today’s goals")) {
         onSetupStarted()
         withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
           screen = .setup
@@ -258,11 +261,11 @@ struct DayGoalFlowView: View {
 
       GoalSetupPanel(
         kind: .focus,
-        title: "Focus goal",
+        title: String(localized: "Focus goal"),
         durationMinutes: $draft.focusTargetMinutes,
-        leadingStatTitle: "Yesterday’s focus",
+        leadingStatTitle: String(localized: "Yesterday’s focus"),
         leadingStatMinutes: focusStats.yesterdayMinutes,
-        trailingStatTitle: "Last week’s Focus average",
+        trailingStatTitle: String(localized: "Last week’s Focus average"),
         trailingStatMinutes: focusStats.lastWeekAverageMinutes,
         statScaleMaxMinutes: focusStats.scaleMaxMinutes,
         selectedCategories: resolvedSnapshots(for: .focus),
@@ -274,11 +277,11 @@ struct DayGoalFlowView: View {
 
       GoalSetupPanel(
         kind: .distraction,
-        title: "Distraction limit",
+        title: String(localized: "Distraction limit"),
         durationMinutes: $draft.distractionLimitMinutes,
-        leadingStatTitle: "Yesterday’s Distractions",
+        leadingStatTitle: String(localized: "Yesterday’s Distractions"),
         leadingStatMinutes: distractionStats.yesterdayMinutes,
-        trailingStatTitle: "Last week’s Distraction average",
+        trailingStatTitle: String(localized: "Last week’s Distraction average"),
         trailingStatMinutes: distractionStats.lastWeekAverageMinutes,
         statScaleMaxMinutes: distractionStats.scaleMaxMinutes,
         selectedCategories: resolvedSnapshots(for: .distraction),
@@ -289,9 +292,9 @@ struct DayGoalFlowView: View {
       .position(x: 804, y: 385.5)
 
       HStack(spacing: 10) {
-        secondaryButton("Skip today", action: onSkip)
+        secondaryButton(String(localized: "Skip today"), action: onSkip)
 
-        primaryButton("Confirm") {
+        primaryButton(String(localized: "Confirm")) {
           var plan = draft
           plan.isSkipped = false
           let now = Int(Date().timeIntervalSince1970)
@@ -545,18 +548,9 @@ struct DayGoalFlowView: View {
     .pointingHandCursorOnHover(reassertOnPressEnd: true)
   }
 
+  /// Spelled-out hours and minutes in the current language, e.g. "2 hours, 30 minutes".
   private func formatDuration(_ duration: TimeInterval) -> String {
-    let totalMinutes = max(0, Int(duration / 60))
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-
-    if hours > 0 && minutes > 0 {
-      return "\(hours) hours \(minutes) minutes"
-    }
-    if hours > 0 {
-      return hours == 1 ? "1 hour" : "\(hours) hours"
-    }
-    return "\(minutes) minutes"
+    LocalizedDuration.string(duration)
   }
 
 }
