@@ -301,10 +301,10 @@ extension GeminiDirectProvider {
       let formattedStart = formattedDashboardRangeDate(startDate) ?? startDate
       let formattedEnd = formattedDashboardRangeDate(endDate) ?? endDate
       return formattedStart == formattedEnd
-        ? formattedStart : "\(formattedStart) to \(formattedEnd)"
+        ? formattedStart : String(localized: "\(formattedStart) to \(formattedEnd)")
     }
 
-    return "the requested dates"
+    return String(localized: "the requested dates")
   }
 
   func formattedDashboardSingleDate(_ dateString: String) -> String? {
