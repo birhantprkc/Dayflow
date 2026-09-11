@@ -58,23 +58,32 @@ struct HowItWorksCard_Previews: PreviewProvider {
     VStack(spacing: 20) {
       HowItWorksCard(
         iconImage: "OnboardingHow",
-        title: "Install and Forget",
+        title: String(localized: "Install and Forget"),
         description:
-          "Dayflow takes periodic screen captures to understand what you're working on - all stored privately on your device."
+          String(
+            localized:
+              "Dayflow takes periodic screen captures to understand what you're working on - all stored privately on your device."
+          )
       )
 
       HowItWorksCard(
         iconImage: "OnboardingSecurity",
-        title: "AI-Powered Insights",
+        title: String(localized: "AI-Powered Insights"),
         description:
-          "Local AI analyzes your activities to create a timeline of your day without sending data to the cloud."
+          String(
+            localized:
+              "Local AI analyzes your activities to create a timeline of your day without sending data to the cloud."
+          )
       )
 
       HowItWorksCard(
         iconImage: "OnboardingUnderstanding",
-        title: "Review Your Day",
+        title: String(localized: "Review Your Day"),
         description:
-          "See where your time went with beautiful visualizations and actionable insights about your productivity."
+          String(
+            localized:
+              "See where your time went with beautiful visualizations and actionable insights about your productivity."
+          )
       )
     }
     .padding(40)
