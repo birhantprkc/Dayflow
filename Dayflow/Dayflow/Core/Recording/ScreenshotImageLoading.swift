@@ -73,7 +73,7 @@ enum ScreenshotImageLoadingError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .decodeFailed(let path):
-      return "Could not decode the screenshot at \(path)."
+      return String(localized: "Could not decode the screenshot at \(path).")
     }
   }
 }
