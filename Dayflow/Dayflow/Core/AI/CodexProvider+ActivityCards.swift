@@ -15,9 +15,9 @@ extension CodexProvider {
       var errorDescription: String? {
         switch self {
         case .empty:
-          return "No cards returned."
+          return String(localized: "No cards returned.")
         case .decodeFailure:
-          return "Failed to decode cards."
+          return String(localized: "Failed to decode cards.")
         case .validationFailed(let details):
           return details
         }
