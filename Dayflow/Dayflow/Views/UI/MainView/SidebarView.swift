@@ -51,14 +51,20 @@ enum SidebarIcon: CaseIterable {
 
   var displayName: String {
     switch self {
-    case .timeline: return "Timeline"
-    case .daily: return "Daily"
-    case .weekly: return "Weekly"
-    case .chat: return "Chat"
-    case .flow: return "Flow"
-    case .agents: return "Agents"
-    case .bug: return "Support"
-    case .settings: return "Settings"
+    case .timeline: return String(localized: "Timeline")
+    case .daily:
+      return String(
+        localized: "sidebar.daily", defaultValue: "Daily",
+        comment: "Short sidebar label for the daily recap view.")
+    case .weekly:
+      return String(
+        localized: "sidebar.weekly", defaultValue: "Weekly",
+        comment: "Short sidebar label for the weekly recap view.")
+    case .chat: return String(localized: "Chat")
+    case .flow: return String(localized: "Flow")
+    case .agents: return String(localized: "Agents")
+    case .bug: return String(localized: "Support")
+    case .settings: return String(localized: "Settings")
     }
   }
 
