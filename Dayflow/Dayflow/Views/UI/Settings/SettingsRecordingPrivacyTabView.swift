@@ -12,8 +12,8 @@ struct SettingsRecordingPrivacyTabView: View {
 
   var body: some View {
     SettingsSection(
-      title: "Recording privacy",
-      subtitle: "Choose apps Dayflow should hide from screenshots."
+      title: String(localized: "Recording privacy"),
+      subtitle: String(localized: "Choose apps Dayflow should hide from screenshots.")
     ) {
       VStack(alignment: .leading, spacing: 18) {
         searchField
@@ -63,9 +63,9 @@ struct SettingsRecordingPrivacyTabView: View {
         Spacer()
 
         if viewModel.isLoadingApplications {
-          SettingsMetadata(text: "Loading apps...")
+          SettingsMetadata(text: String(localized: "Loading apps..."))
         } else {
-          SettingsMetadata(text: "\(viewModel.filteredApplications.count) shown")
+          SettingsMetadata(text: String(localized: "\(viewModel.filteredApplications.count) shown"))
         }
       }
 
@@ -123,12 +123,12 @@ struct SettingsRecordingPrivacyTabView: View {
           .fontWeight(.semibold)
           .foregroundColor(SettingsStyle.text)
 
-        SettingsMetadata(text: "\(viewModel.blockedApplications.count) blocked")
+        SettingsMetadata(text: String(localized: "\(viewModel.blockedApplications.count) blocked"))
 
         Spacer()
 
         SettingsSecondaryButton(
-          title: "Clear",
+          title: String(localized: "Clear"),
           isDisabled: viewModel.blockedApplications.isEmpty,
           action: viewModel.clearBlockedApplications
         )
