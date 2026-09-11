@@ -452,7 +452,7 @@ enum WeeklyOverviewBuilder {
 
   private static func displayName(for value: String) -> String {
     let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-    return trimmed.isEmpty ? "Uncategorized" : trimmed
+    return trimmed.isEmpty ? String(localized: "Uncategorized") : trimmed
   }
 
   private static func normalizedMinuteRange(start: Double, end: Double) -> (
