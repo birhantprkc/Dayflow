@@ -10,15 +10,15 @@ enum WeeklyAccessNotificationState: Equatable {
   var buttonTitle: String {
     switch self {
     case .idle:
-      return "Notify me when ready"
+      return String(localized: "Notify me when ready")
     case .requesting:
-      return "Setting reminder..."
+      return String(localized: "Setting reminder...")
     case .scheduled:
-      return "We'll notify you"
+      return String(localized: "We'll notify you")
     case .denied:
-      return "Open notification settings"
+      return String(localized: "Open notification settings")
     case .failed:
-      return "Try again"
+      return String(localized: "Try again")
     }
   }
 
@@ -58,18 +58,18 @@ struct WeeklyAccessProgressSnapshot: Equatable {
     let remainingMinutes = minutes % 60
 
     if minutes == 0 {
-      return "0h / 30h"
+      return String(localized: "0h / 30h")
     }
 
     if hours == 0 {
-      return "\(remainingMinutes)m / 30h"
+      return String(localized: "\(remainingMinutes)m / 30h")
     }
 
     if remainingMinutes == 0 {
-      return "\(hours)h / 30h"
+      return String(localized: "\(hours)h / 30h")
     }
 
-    return "\(hours)h \(remainingMinutes)m / 30h"
+    return String(localized: "\(hours)h \(remainingMinutes)m / 30h")
   }
 
   func estimatedUnlockDate(from date: Date) -> Date {
@@ -134,7 +134,7 @@ private struct WeeklyAccessLockCard: View {
   let onNotify: () -> Void
 
   private var buttonTitle: String {
-    isReady ? "View Weekly" : notificationState.buttonTitle
+    isReady ? String(localized: "View Weekly") : notificationState.buttonTitle
   }
 
   private var isButtonDisabled: Bool {
@@ -489,7 +489,7 @@ private struct WeeklyAccessPreviewBackground: View {
 extension WeeklySankeySnapshot {
   fileprivate static let weeklyAccessPreview = WeeklySankeySnapshot(
     id: "weekly-access-preview",
-    seedLabel: "Weekly preview",
+    seedLabel: String(localized: "Weekly preview"),
     sourceName: "Weekly",
     categories: [
       .init(id: "research", name: "Research", minutes: 430, colorHex: "93BCFF"),
