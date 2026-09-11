@@ -16,10 +16,12 @@ struct CardsToReviewBadge: View {
       stackedCardsIcon
 
       // Label text
-      Text(count == 1 ? "card to review" : "cards to review")
+      Text("Review cards")
         .font(.custom("Figtree", size: 10).weight(.medium))
         .foregroundColor(.white)
     }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(Text("\(count) cards to review"))
     .padding(.horizontal, 12)
     .padding(.vertical, 10)
     .background(
