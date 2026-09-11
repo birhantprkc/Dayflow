@@ -18,17 +18,17 @@ struct LLMProviderSetupView: View {
   var headerTitle: String {
     switch effectiveProviderType {
     case .local:
-      return "Use local AI"
+      return String(localized: "Use local AI")
     case .chatGPT:
-      return "Connect ChatGPT"
+      return String(localized: "Connect ChatGPT")
     case .claude:
-      return "Connect Claude"
+      return String(localized: "Connect Claude")
     case .openAICompatible:
-      return "Connect an AI endpoint"
+      return String(localized: "Connect an AI endpoint")
     case .gemini:
-      return "Gemini"
+      return String(localized: "Gemini")
     case .dayflow:
-      return "Dayflow Pro"
+      return String(localized: "Dayflow Pro")
     }
   }
 
@@ -137,17 +137,15 @@ struct LLMProviderSetupView: View {
         setupState.saveErrorMessage = nil
       }
     } message: {
-      Text(setupState.saveErrorMessage ?? "Please try again.")
+      Text(setupState.saveErrorMessage ?? String(localized: "Please try again."))
     }
   }
 
   var nextButtonText: String {
-    if let title = setupState.currentStep.contentType.informationTitle {
-      if (title == "Testing" || title == "Test Connection") && !setupState.testSuccessful {
-        return "Test Required"
-      }
+    if ["verify", "test"].contains(setupState.currentStep.id) && !setupState.testSuccessful {
+      return String(localized: "Test Required")
     }
-    return "Next"
+    return String(localized: "Next")
   }
 
   @ViewBuilder
@@ -173,7 +171,8 @@ struct LLMProviderSetupView: View {
         content: {
           HStack(spacing: 4) {
             Text(nextButtonText).font(.custom("Figtree", size: 16)).fontWeight(.medium)
-            if nextButtonText == "Next" {
+            if !["verify", "test"].contains(setupState.currentStep.id) || setupState.testSuccessful
+            {
               Image(systemName: "chevron.right")
                 .font(.system(size: 15, weight: .medium))
                 .frame(width: 20, height: 20)
@@ -265,8 +264,8 @@ struct LLMProviderSetupView: View {
             .font(.custom("Figtree", size: 14))
             .foregroundColor(Color(hex: "333333"))
           TerminalCommandView(
-            title: "Run this command:",
-            subtitle: "Downloads Qwen3 Vision 4B for Ollama",
+            title: String(localized: "Run this command:"),
+            subtitle: String(localized: "Downloads Qwen3 Vision 4B for Ollama"),
             command: "ollama pull qwen3-vl:4b"
           )
         } else if setupState.localEngine == .lmstudio {
@@ -339,8 +338,8 @@ struct LLMProviderSetupView: View {
     case .terminalCommand(let command):
       VStack(alignment: .leading, spacing: 24) {
         TerminalCommandView(
-          title: "Terminal command:",
-          subtitle: "Copy the code below and try running it in your terminal",
+          title: String(localized: "Terminal command:"),
+          subtitle: String(localized: "Copy the code below and try running it in your terminal"),
           command: command
         )
 
@@ -350,8 +349,8 @@ struct LLMProviderSetupView: View {
       VStack(alignment: .leading, spacing: 24) {
         APIKeyInputView(
           apiKey: $setupState.apiKey,
-          title: "Enter your API key:",
-          subtitle: "Paste your Gemini API key below",
+          title: String(localized: "Enter your API key:"),
+          subtitle: String(localized: "Paste your Gemini API key below"),
           placeholder: "AQ...",
           onValidate: { key in
             key.components(separatedBy: .whitespacesAndNewlines).joined().count > 10
@@ -424,9 +423,12 @@ struct LLMProviderSetupView: View {
         }
 
         TerminalCommandView(
-          title: "Run this command:",
+          title: String(localized: "Run this command:"),
           subtitle:
-            "This will download the \(LocalModelPreset.qwen3VL4B.displayName) model (about 5GB)",
+            String(
+              localized:
+                "This will download the \(LocalModelPreset.qwen3VL4B.displayName) model (about 5GB)"
+            ),
           command: command
         )
 
@@ -451,15 +453,14 @@ struct LLMProviderSetupView: View {
               .frame(maxWidth: 500, alignment: .leading)
             // Additional guidance for the local intro step only
             if step.id == "intro" && providerType == .local {
-              (Text("Advanced users can pick any ") + Text("vision-capable").fontWeight(.bold)
-                + Text(
-                  " LLM, but we strongly recommend using Qwen3-VL 4B based on our internal benchmarks."
-                ))
-                .font(.custom("Figtree", size: 16))
-                .foregroundColor(Color(hex: "333333"))
-                .fixedSize(horizontal: false, vertical: true)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: 500, alignment: .leading)
+              Text(
+                "Advanced users can pick any **vision-capable** LLM, but we strongly recommend using Qwen3-VL 4B based on our internal benchmarks."
+              )
+              .font(.custom("Figtree", size: 16))
+              .foregroundColor(Color(hex: "333333"))
+              .fixedSize(horizontal: false, vertical: true)
+              .multilineTextAlignment(.leading)
+              .frame(maxWidth: 500, alignment: .leading)
             }
           }
         }
@@ -467,7 +468,7 @@ struct LLMProviderSetupView: View {
         // Content area scrolls if needed; Next stays visible below
         ScrollView(.vertical, showsIndicators: true) {
           VStack(alignment: .leading, spacing: 16) {
-            if title == "Testing" || title == "Test Connection" {
+            if ["verify", "test"].contains(step.id) {
               if providerType == .gemini {
                 TestConnectionView(
                   apiKey: setupState.apiKey,
@@ -508,11 +509,14 @@ struct LLMProviderSetupView: View {
                     modelId: $setupState.openAICompatibleModelID,
                     apiKey: $setupState.openAICompatibleAPIKey,
                     engine: .custom,
-                    buttonLabel: "Test endpoint",
+                    buttonLabel: String(localized: "Test endpoint"),
                     basePlaceholder: OpenAICompatibleConfiguration.openRouterBaseURL,
                     modelPlaceholder: "openai/gpt-5.6-sol",
                     credentialStorageDescription:
-                      "Stored safely in Keychain and sent only to this endpoint as a Bearer token.",
+                      String(
+                        localized:
+                          "Stored safely in Keychain and sent only to this endpoint as a Bearer token."
+                      ),
                     requiresMeaningfulResponse: true,
                     enforcesLocalLatencyLimit: false,
                     onTestComplete: { success in
@@ -704,7 +708,8 @@ struct LLMProviderSetupView: View {
   func saveConfiguration() -> Bool {
     setupState.saveErrorMessage = nil
     guard setupState.testSuccessful else {
-      setupState.saveErrorMessage = "Test this provider successfully before completing setup."
+      setupState.saveErrorMessage = String(
+        localized: "Test this provider successfully before completing setup.")
       return false
     }
 
@@ -714,7 +719,9 @@ struct LLMProviderSetupView: View {
       if !cleanedKey.isEmpty {
         guard KeychainManager.shared.store(cleanedKey, for: "gemini") else {
           let message =
-            "Couldn't save your API key to Keychain. Please unlock Keychain and try again."
+            String(
+              localized:
+                "Couldn't save your API key to Keychain. Please unlock Keychain and try again.")
           setupState.geminiAPIKeySaveError = message
           setupState.saveErrorMessage = message
           return false
@@ -731,7 +738,10 @@ struct LLMProviderSetupView: View {
     if providerType == .openAICompatible {
       guard persistOpenAICompatibleSettings() else {
         setupState.saveErrorMessage =
-          "Dayflow couldn't save this endpoint configuration. Your previous configuration is still active."
+          String(
+            localized:
+              "Dayflow couldn't save this endpoint configuration. Your previous configuration is still active."
+          )
         return false
       }
     }
@@ -741,7 +751,7 @@ struct LLMProviderSetupView: View {
       return true
     } catch {
       setupState.saveErrorMessage =
-        "Dayflow couldn't finish saving this provider. Please try again."
+        String(localized: "Dayflow couldn't finish saving this provider. Please try again.")
       return false
     }
   }
@@ -750,7 +760,10 @@ struct LLMProviderSetupView: View {
     guard saveConfiguration() else { return }
     guard onComplete(effectiveProviderType) else {
       setupState.saveErrorMessage =
-        "The provider is configured, but Dayflow couldn't update your routing. Your previous selection is still active."
+        String(
+          localized:
+            "The provider is configured, but Dayflow couldn't update your routing. Your previous selection is still active."
+        )
       return
     }
   }
