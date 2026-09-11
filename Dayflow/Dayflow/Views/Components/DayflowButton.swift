@@ -138,10 +138,10 @@ struct DayflowButton: View {
 struct DayflowButton_Previews: PreviewProvider {
   static var previews: some View {
     VStack(spacing: 20) {
-      DayflowButton(title: "Start", action: {})
-      DayflowButton(title: "Continue", action: {}, width: 200)
-      DayflowButton(title: "Next", action: {}, width: 120, fontSize: 14)
-      DayflowButton(title: "Subtle", action: {}, isSubtle: true)
+      DayflowButton(title: String(localized: "Start"), action: {})
+      DayflowButton(title: String(localized: "Continue"), action: {}, width: 200)
+      DayflowButton(title: String(localized: "Next"), action: {}, width: 120, fontSize: 14)
+      DayflowButton(title: String(localized: "Subtle"), action: {}, isSubtle: true)
     }
     .padding(40)
     .background(Color.gray.opacity(0.1))
