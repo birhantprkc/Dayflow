@@ -74,31 +74,37 @@ extension DailyView {
   }
   var notificationPermissionButtonTitle: String {
     if isCheckingNotificationAuthorization || isRequestingNotificationPermission {
-      return "Checking..."
+      return String(localized: "Checking...")
     }
 
     if notificationAuthorizationStatus == .authorized {
-      return "Opening Daily..."
+      return String(localized: "Opening Daily...")
     }
 
     if notificationAuthorizationStatus == .denied {
-      return "Open System Settings"
+      return String(localized: "Open System Settings")
     }
 
-    return "Turn on notifications"
+    return String(localized: "Turn on notifications")
   }
   var notificationPermissionMessage: String {
     if notificationAuthorizationStatus == .denied {
       return
-        "Notifications are currently off for Dayflow. Enable them in System Settings to finish unlocking Daily."
+        String(
+          localized:
+            "Notifications are currently off for Dayflow. Enable them in System Settings to finish unlocking Daily."
+        )
     }
 
     if notificationAuthorizationStatus == .authorized {
-      return "Notifications are already enabled. We'll open Daily automatically."
+      return String(localized: "Notifications are already enabled. We'll open Daily automatically.")
     }
 
     return
-      "Turn them on to continue. If you come back from System Settings, we'll check automatically."
+      String(
+        localized:
+          "Turn them on to continue. If you come back from System Settings, we'll check automatically."
+      )
   }
   func checkNotificationAuthorizationForUnlock() {
     guard !isCheckingNotificationAuthorization, !isRequestingNotificationPermission else {
