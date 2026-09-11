@@ -5,7 +5,7 @@ struct WeeklyTreemapSnapshot {
   let categories: [WeeklyTreemapCategory]
 
   static let figmaPreview = WeeklyTreemapSnapshot(
-    title: "Most used per category",
+    title: String(localized: "Most used per category"),
     categories: [
       WeeklyTreemapCategory(
         id: "design",
@@ -124,7 +124,7 @@ struct WeeklyTreemapSnapshot {
   )
 
   static let dominantCategoryPreview = WeeklyTreemapSnapshot(
-    title: "Most used per category",
+    title: String(localized: "Most used per category"),
     categories: [
       WeeklyTreemapCategory(
         id: "design",
@@ -184,7 +184,7 @@ struct WeeklyTreemapSnapshot {
   )
 
   static let tinyTailPreview = WeeklyTreemapSnapshot(
-    title: "Most used per category",
+    title: String(localized: "Most used per category"),
     categories: [
       WeeklyTreemapCategory(
         id: "research",
@@ -238,7 +238,7 @@ struct WeeklyTreemapSnapshot {
   )
 
   static let crowdedPreview = WeeklyTreemapSnapshot(
-    title: "Most used per category",
+    title: String(localized: "Most used per category"),
     categories: [
       WeeklyTreemapCategory(
         id: "design",
