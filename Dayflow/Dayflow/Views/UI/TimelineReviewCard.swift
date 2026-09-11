@@ -170,7 +170,7 @@ struct TimelineReviewCard: View {
   private var timeRangeText: String {
     let start = TimelineReviewTimeCache.shared.string(from: activity.startTime)
     let end = TimelineReviewTimeCache.shared.string(from: activity.endTime)
-    return "\(start) - \(end)"
+    return String(localized: "\(start) - \(end)")
   }
 
   private var usingVideoPlayer: Bool {
