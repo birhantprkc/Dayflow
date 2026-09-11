@@ -304,7 +304,8 @@ final class FlowDistractionAgent: ObservableObject {
 
     switch verdict.action {
     case "nudge":
-      let message = verdict.message ?? "Psst... I think you're getting distracted!"
+      let message =
+        verdict.message ?? String(localized: "Psst... I think you're getting distracted!")
       FlowSessionMirror.shared.agentNudge(message: message)
     case "praise":
       if let message = verdict.message, !message.isEmpty {
@@ -528,7 +529,7 @@ final class FlowDistractionAgent: ObservableObject {
     if text.count > 4000 {
       text = String(text.prefix(4000)) + "\n[truncated]"
     }
-    return text.isEmpty ? "[no text detected on screen]" : text
+    return text.isEmpty ? String(localized: "[no text detected on screen]") : text
   }
 
   // MARK: - Cleanup

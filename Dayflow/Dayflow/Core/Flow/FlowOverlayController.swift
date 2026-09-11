@@ -71,12 +71,22 @@ final class FlowOverlayController {
   }
 
   private func exitClip(for presentation: FlowOverlayPresentation) -> FlowCreatureClip? {
+    let mirror = FlowSessionMirror.shared
     switch presentation {
     case .hidden: return nil
     case .onBreak: return .bathEnd
-    case .sessionEnded: return .exitPlane
     case .nudge(_, true): return .fireEnd
-    case .toast, .nudge: return .randomExit
+    case .sessionEnded, .toast, .nudge:
+      switch mirror.overlayVariant {
+      case .side:
+        return presentation == .sessionEnded ? .exitPlane : .randomExit
+      case .top:
+        // Landed creature: flies off by copter when the user gets back to
+        // work, folds a paper plane for everything else.
+        return mirror.lastNudgeReply == .backToWork ? .exitCopter : .exitPlane
+      case .peek:
+        return .peekExit
+      }
     }
   }
 
@@ -120,12 +130,16 @@ final class FlowOverlayController {
     guard let screen = NSScreen.main else { return }
     let visible = screen.visibleFrame
     let size = panel.frame.size
-    // Bottom-right, flush with the screen edge so the creature art clips at
-    // the edge exactly like the Figma mock (it "peeks in" from offscreen).
-    let origin = NSPoint(
-      x: visible.maxX - size.width,
-      y: visible.minY + 8
-    )
+    let origin: NSPoint
+    if FlowSessionMirror.shared.overlayVariant.anchorsToTop {
+      // From-above variants: the panel's top edge sits at the very top of
+      // the screen (under the menu bar) so the creature drops out of it.
+      origin = NSPoint(x: visible.maxX - size.width, y: screen.frame.maxY - size.height)
+    } else {
+      // Bottom-right, flush with the screen edge so the creature art clips at
+      // the edge exactly like the Figma mock (it "peeks in" from offscreen).
+      origin = NSPoint(x: visible.maxX - size.width, y: visible.minY + 8)
+    }
     panel.setFrameOrigin(origin)
   }
 }

@@ -24,7 +24,25 @@ final class FlowSessionMirror: ObservableObject {
   static let shared = FlowSessionMirror()
 
   @Published private(set) var snapshot: FlowNativeSnapshot
-  @Published private(set) var overlay: FlowOverlayPresentation = .hidden
+  @Published private(set) var overlay: FlowOverlayPresentation = .hidden {
+    didSet {
+      // The variant is fixed per appearance: picked when a nudge brings the
+      // creature on screen, kept through the follow-up toast, and reset to
+      // the side layout for anything that starts from hidden or needs the
+      // tub (bath clips are authored for the bottom-right corner).
+      if case .nudge = overlay {
+        if oldValue == .hidden {
+          overlayVariant = FlowNudgeVariant.current
+          lastNudgeReply = nil
+        }
+      } else if overlay == .onBreak || oldValue == .hidden {
+        overlayVariant = .side
+      }
+    }
+  }
+  /// Layout/clip family for what's on screen right now (see FlowNudgeVariant).
+  @Published private(set) var overlayVariant: FlowNudgeVariant = .side
+  private(set) var lastNudgeReply: FlowNudgeReply?
   /// True between a (simulated) distraction firing and the user responding.
   @Published private(set) var isDistracted = false
 
@@ -66,7 +84,7 @@ final class FlowSessionMirror: ObservableObject {
       isDistracted = false
       snoozeUntil = nil
       nudgeStreak = 0
-      showToast("Your flow session starts now!")
+      showToast(String(localized: "Your flow session starts now!"))
       FlowDistractionAgent.shared.start(with: newSnapshot)
       AnalyticsService.shared.capture(
         "flow_session_started",
@@ -78,7 +96,7 @@ final class FlowSessionMirror: ObservableObject {
       overlay = .onBreak
       FlowDistractionAgent.shared.pause()
     case (.onBreak, .active):
-      showToast("Break's over. Back to it!")
+      showToast(String(localized: "Break's over. Back to it!"))
       FlowDistractionAgent.shared.resume()
     case (_, .idle), (_, .ended):
       isDistracted = false
@@ -109,7 +127,8 @@ final class FlowSessionMirror: ObservableObject {
     snoozeUntil = nil
     nudgeStreak += 1
     overlay = .nudge(
-      message: "Psst... I think you're getting distracted!", escalated: nudgeStreak >= 2)
+      message: String(localized: "Psst... I think you're getting distracted!"),
+      escalated: nudgeStreak >= 2)
     armDeadlineTimer()
   }
 
@@ -148,16 +167,18 @@ final class FlowSessionMirror: ObservableObject {
   // MARK: - Overlay pill actions
 
   func respondBackToWork() {
+    lastNudgeReply = .backToWork
     isDistracted = false
     snoozeUntil = nil
     nudgeStreak = 0
     webBridge?.sendEvent("overlayAction", payload: ["action": "backToWork"])
     FlowDistractionAgent.shared.noteUserEvent(
       "The user tapped \"I'll get back to work\" on your nudge.", markRefocused: true)
-    showToast("Nice! Keep at it")
+    showToast(String(localized: "Nice! Keep at it"))
   }
 
   func snooze(minutes: Int) {
+    lastNudgeReply = .snooze
     snoozeUntil = Date().addingTimeInterval(TimeInterval(minutes * 60))
     webBridge?.sendEvent(
       "overlayAction", payload: ["action": "snooze", "minutes": minutes])
@@ -171,6 +192,7 @@ final class FlowSessionMirror: ObservableObject {
   /// "Correct Flow's mistake": the agent misread the screen. Close the
   /// distraction interval and tell the agent so it recalibrates.
   func correctMistake() {
+    lastNudgeReply = .correct
     isDistracted = false
     snoozeUntil = nil
     nudgeStreak = 0
@@ -234,7 +256,8 @@ final class FlowSessionMirror: ObservableObject {
       if isDistracted, snapshot.phase == .active, snapshot.alertStyle != .quiet {
         nudgeStreak += 1
         overlay = .nudge(
-          message: "Snooze is up — ready to get back to it?", escalated: nudgeStreak >= 2)
+          message: String(localized: "Snooze is up — ready to get back to it?"),
+          escalated: nudgeStreak >= 2)
       }
     }
 
@@ -250,7 +273,7 @@ final class FlowSessionMirror: ObservableObject {
       snapshot.phase = .active
       snapshot.breakEndsAt = nil
       snapshot.persist()
-      showToast("Break's over. Back to it!")
+      showToast(String(localized: "Break's over. Back to it!"))
     }
 
     armDeadlineTimer()

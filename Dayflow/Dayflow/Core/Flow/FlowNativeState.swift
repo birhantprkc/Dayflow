@@ -98,3 +98,45 @@ enum FlowOverlayPresentation: Equatable {
   /// Timed session hit its natural end.
   case sessionEnded
 }
+
+/// Where the nudge creature comes from. `side` is the Figma layout (peeks in
+/// at the bottom-right corner); `top` drops down from the top edge, lands and
+/// listens; `peek` hangs half-body from the top edge. Chosen from the app
+/// menu while we experiment; toasts and breaks always use the side layout.
+enum FlowNudgeVariant: String, CaseIterable {
+  case side
+  case top
+  case peek
+
+  static let defaultsKey = "flowNudgeVariant"
+
+  static var current: FlowNudgeVariant {
+    get {
+      UserDefaults.standard.string(forKey: defaultsKey).flatMap(Self.init(rawValue:)) ?? .side
+    }
+    set { UserDefaults.standard.set(newValue.rawValue, forKey: defaultsKey) }
+  }
+
+  var next: FlowNudgeVariant {
+    let all = Self.allCases
+    return all[(all.firstIndex(of: self)! + 1) % all.count]
+  }
+
+  var title: String {
+    switch self {
+    case .side: return "Side"
+    case .top: return "Drop from top"
+    case .peek: return "Peek from top"
+    }
+  }
+
+  /// Panel hugs the top edge of the screen for the from-above variants.
+  var anchorsToTop: Bool { self != .side }
+}
+
+/// Which pill the user tapped on the last nudge; picks the matching exit clip.
+enum FlowNudgeReply {
+  case backToWork
+  case snooze
+  case correct
+}
