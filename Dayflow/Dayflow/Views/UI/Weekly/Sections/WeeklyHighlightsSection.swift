@@ -73,19 +73,28 @@ struct WeeklyHighlightsSnapshot {
         id: "editorial-nls",
         tag: "EDITORIAL NLS",
         text:
-          "Iterated on ZSR and sparse results design explorations (zero-result states, best match redirects, query rephrasing guidance)"
+          String(
+            localized:
+              "Iterated on ZSR and sparse results design explorations (zero-result states, best match redirects, query rephrasing guidance)"
+          )
       ),
       WeeklyHighlight(
         id: "editorial-video-nls",
         tag: "EDITORIAL VIDEO NLS",
         text:
-          "Conducted competitive analysis of NLS video search tools (TwelveLabs, WayinVideo, AP Moments, YouTube Ask) during Pod 1 Review"
+          String(
+            localized:
+              "Conducted competitive analysis of NLS video search tools (TwelveLabs, WayinVideo, AP Moments, YouTube Ask) during Pod 1 Review"
+          )
       ),
       WeeklyHighlight(
         id: "editorial-sbi",
         tag: "EDITORIAL SBI",
         text:
-          "Reviewed scope-switching and SBI handling flows; drafted \"Areas requiring additional PD input\" spec with ClickUp links; synced with Jason Ross on SBI UX details"
+          String(
+            localized:
+              "Reviewed scope-switching and SBI handling flows; drafted \"Areas requiring additional PD input\" spec with ClickUp links; synced with Jason Ross on SBI UX details"
+          )
       ),
     ]
   )
