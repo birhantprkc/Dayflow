@@ -42,7 +42,8 @@ struct CLIDetector {
     let resolvedPath = tool == .codex ? nil : tool.executableName
     if message.isEmpty {
       return CLIDetectionReport(
-        state: .failed(message: "Exit code \(result.exitCode)"), resolvedPath: resolvedPath,
+        state: .failed(message: String(localized: "Exit code \(result.exitCode)")),
+        resolvedPath: resolvedPath,
         stdout: result.stdout, stderr: result.stderr)
     }
     return CLIDetectionReport(
@@ -144,7 +145,7 @@ struct ChatCLIDetectionStepView: View {
                   .font(.system(size: 13, weight: .semibold))
                   .frame(width: 16, height: 16)
               }
-              Text(isChecking ? "Checking…" : "Check")
+              Text(isChecking ? String(localized: "Checking…") : String(localized: "Check"))
                 .font(.custom("Figtree", size: 14))
                 .fontWeight(.medium)
             }
@@ -191,7 +192,7 @@ struct ChatCLIDetectionStepView: View {
             .font(.custom("Figtree", size: 16))
             .fontWeight(.semibold)
             .foregroundColor(.black)
-          Text(enabled ? "Ready to use" : "Install to enable")
+          Text(enabled ? String(localized: "Ready to use") : String(localized: "Install to enable"))
             .font(.custom("Figtree", size: 12))
             .foregroundColor(Color(hex: "727272"))
         }
@@ -327,9 +328,9 @@ struct ChatCLIToolStatusRow: View {
   var installLabel: String {
     switch status {
     case .failed:
-      return "Setup guide"
+      return String(localized: "Setup guide")
     default:
-      return "Install"
+      return String(localized: "Install")
     }
   }
 }
