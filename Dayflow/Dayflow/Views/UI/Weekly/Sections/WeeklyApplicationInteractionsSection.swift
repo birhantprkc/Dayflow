@@ -317,7 +317,8 @@ struct WeeklyApplicationInteractionsSnapshot {
   let rabbitHole: WeeklyRabbitHoleSnapshot
 
   static let figmaPreview = WeeklyApplicationInteractionsSnapshot(
-    subtitle: "More than 80% of recorded time was spent using these applications.",
+    subtitle: String(
+      localized: "More than 80% of recorded time was spent using these applications."),
     nodes: [
       .init(
         id: "figma", name: "Figma", x: 256.5, y: 253.3, size: 76, kind: .work, mark: "F",
@@ -385,7 +386,10 @@ struct WeeklyApplicationInteractionsSnapshot {
         to: .figma(avg: "1h 25m avg"),
         count: 9,
         description:
-          "Moves between communicating on project progress on Slack and designing mockups on Figma an average of 9 times per day."
+          String(
+            localized:
+              "Moves between communicating on project progress on Slack and designing mockups on Figma an average of 9 times per day."
+          )
       ),
       WeeklyWorkPattern(
         id: "runway-flora-figma",
@@ -394,7 +398,10 @@ struct WeeklyApplicationInteractionsSnapshot {
         to: .figma(avg: "42m avg"),
         count: 4,
         description:
-          "Moves between generating visuals on xyz and designing mockups on Figma an average of 4 times per day."
+          String(
+            localized:
+              "Moves between generating visuals on xyz and designing mockups on Figma an average of 4 times per day."
+          )
       ),
     ],
     rabbitHole: WeeklyRabbitHoleSnapshot(
