@@ -31,28 +31,38 @@ enum DailyRecapGeneratorError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .emptyCards(let day):
-      return "No timeline cards were found for \(day)."
+      return String(localized: "No timeline cards were found for \(day).")
     case .noProviderSelected:
       return
-        "No Daily provider is selected. Choose one from the gear button above to turn Daily generation back on."
+        String(
+          localized:
+            "No Daily provider is selected. Choose one from the gear button above to turn Daily generation back on."
+        )
     case .missingDayflowAuthToken:
-      return "Dayflow backend auth token is unavailable."
+      return String(localized: "Dayflow backend auth token is unavailable.")
     case .missingLocalConfiguration:
       return
-        "Local Daily generation is not configured. Set up Ollama or LM Studio, or pick a different provider."
+        String(
+          localized:
+            "Local Daily generation is not configured. Set up Ollama or LM Studio, or pick a different provider."
+        )
     case .missingGeminiAPIKey:
-      return "Gemini API key is missing."
+      return String(localized: "Gemini API key is missing.")
     case .missingCodexCLI:
-      return "Codex CLI is not installed."
+      return String(localized: "Codex CLI is not installed.")
     case .missingClaudeCLI:
-      return "Claude Code is not installed."
+      return String(localized: "Claude Code is not installed.")
     case .emptyGeneratedContent(let day):
-      return "Daily generation returned no usable items for \(day)."
+      return String(localized: "Daily generation returned no usable items for \(day).")
     case .invalidJSONResponse(let rawResponse):
-      return "The model did not return valid JSON.\n\nRAW OUTPUT:\n\(rawResponse)"
+      return String(
+        localized: "The model did not return valid JSON.\n\nRAW OUTPUT:\n\(rawResponse)")
     case .invalidResponseShape(let rawResponse):
       return
-        "The model returned JSON, but it did not match the Daily recap schema.\n\nRAW OUTPUT:\n\(rawResponse)"
+        String(
+          localized:
+            "The model returned JSON, but it did not match the Daily recap schema.\n\nRAW OUTPUT:\n\(rawResponse)"
+        )
     }
   }
 }
@@ -227,12 +237,12 @@ final class DailyRecapGenerator {
     }
 
     guard !ordered.isEmpty else {
-      return "No timeline activities were recorded for \(day)."
+      return String(localized: "No timeline activities were recorded for \(day).")
     }
 
     var lines: [String] = ["Timeline activities for \(day):", ""]
     for (index, card) in ordered.enumerated() {
-      let title = standupLine(from: card) ?? "Untitled activity"
+      let title = standupLine(from: card) ?? String(localized: "Untitled activity")
       let start = humanReadableClockTime(card.startTimestamp)
       let end = humanReadableClockTime(card.endTimestamp)
       lines.append("\(index + 1). \(start) - \(end): \(title)")
@@ -248,7 +258,7 @@ final class DailyRecapGenerator {
 
   static func makeObservationsText(day: String, observations: [Observation]) -> String {
     guard !observations.isEmpty else {
-      return "No observations were recorded for \(day)."
+      return String(localized: "No observations were recorded for \(day).")
     }
 
     let ordered = observations.sorted { $0.startTs < $1.startTs }
@@ -263,7 +273,7 @@ final class DailyRecapGenerator {
     }
 
     if lines.count <= 2 {
-      return "No observations were recorded for \(day)."
+      return String(localized: "No observations were recorded for \(day).")
     }
     return lines.joined(separator: "\n")
   }
@@ -273,10 +283,11 @@ final class DailyRecapGenerator {
 
     return entries.map { entry in
       let payload = entry.payloadJSON.trimmingCharacters(in: .whitespacesAndNewlines)
-      return """
-        Day \(entry.standupDay):
-        \(payload)
-        """
+      return String(
+        localized: """
+          Day \(entry.standupDay):
+          \(payload)
+          """)
     }
     .joined(separator: "\n\n")
   }
