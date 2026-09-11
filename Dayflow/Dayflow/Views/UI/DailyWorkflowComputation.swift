@@ -246,27 +246,27 @@ func computeDailyWorkflow(cards: [TimelineCard], categories: [TimelineCategory])
   let stats = [
     DailyWorkflowStatChip(
       id: "context-switched",
-      title: "Context switched",
+      title: String(localized: "Context switched"),
       value: formatCount(contextSwitches)
     ),
     DailyWorkflowStatChip(
       id: "interrupted",
-      title: "Interrupted",
+      title: String(localized: "Interrupted"),
       value: formatCount(interruptions)
     ),
     DailyWorkflowStatChip(
       id: "focused-for",
-      title: "Focused for",
+      title: String(localized: "Focused for"),
       value: formatDurationValue(focusedMinutes)
     ),
     DailyWorkflowStatChip(
       id: "distracted-for",
-      title: "Distracted for",
+      title: String(localized: "Distracted for"),
       value: formatDurationValue(distractedMinutes)
     ),
     DailyWorkflowStatChip(
       id: "transitioning-time",
-      title: "Transitioning time",
+      title: String(localized: "Transitioning time"),
       value: formatDurationValue(transitionMinutes)
     ),
   ]
@@ -482,21 +482,15 @@ func fallbackColorHex(for key: String) -> String {
 
 func formatAxisHourLabel(fromAbsoluteHour hour: Int) -> String {
   let normalized = ((hour % 24) + 24) % 24
-  let period = normalized >= 12 ? "pm" : "am"
-  let display = normalized % 12 == 0 ? 12 : normalized % 12
-  return "\(display)\(period)"
+  let date =
+    Calendar.current.date(bySettingHour: normalized, minute: 0, second: 0, of: Date()) ?? Date()
+  return date.formatted(.dateTime.hour())
 }
 
 func formatCount(_ count: Int) -> String {
-  "\(count) \(count == 1 ? "time" : "times")"
+  String(localized: "\(count) times")
 }
 
 func formatDurationValue(_ minutes: Double) -> String {
-  let rounded = max(0, Int(minutes.rounded()))
-  let hours = rounded / 60
-  let mins = rounded % 60
-
-  if hours > 0 && mins > 0 { return "\(hours)h \(mins)m" }
-  if hours > 0 { return "\(hours)h" }
-  return "\(mins)m"
+  LocalizedDuration.string(minutes * 60, style: .abbreviated)
 }
