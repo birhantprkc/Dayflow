@@ -102,13 +102,15 @@ struct AgentThreadCardView: View {
       .buttonStyle(.plain)
       .hoverScaleEffect(scale: 1.1)
       .pointingHandCursor()
-      .accessibilityLabel(Text(isKept ? "Unstar thread" : "Star thread to keep"))
+      .accessibilityLabel(
+        Text(isKept ? String(localized: "Unstar thread") : String(localized: "Star thread to keep"))
+      )
 
       Spacer()
 
       Button(action: onToggleExpanded) {
         HStack(spacing: 4) {
-          Text(isExpanded ? "Collapse" : "Expand")
+          Text(isExpanded ? String(localized: "Collapse") : String(localized: "Expand"))
             .font(.custom("Figtree", size: 11.5))
           Image(systemName: "chevron.up.chevron.down")
             .font(.system(size: 9))
@@ -353,17 +355,17 @@ struct AgentHighlightPill: View {
     switch highlight {
     case .keyDecision:
       pill(
-        text: "Key decision", showArrow: false,
+        text: String(localized: "Key decision"), showArrow: false,
         background: AgentsPalette.keyDecisionBackground,
         foreground: AgentsPalette.keyDecisionForeground)
     case .keyInfo:
       pill(
-        text: "Key info", showArrow: false,
+        text: String(localized: "Key info"), showArrow: false,
         background: AgentsPalette.keyInfoBackground,
         foreground: AgentsPalette.keyInfoForeground)
     case .readyForReview:
       pill(
-        text: "Ready for review", showArrow: true,
+        text: String(localized: "Ready for review"), showArrow: true,
         background: AgentsPalette.reviewBackground,
         foreground: AgentsPalette.reviewForeground)
     case .none:
