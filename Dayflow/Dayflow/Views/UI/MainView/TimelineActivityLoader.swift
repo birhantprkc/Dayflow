@@ -36,6 +36,7 @@ struct TimelineRecordingProjectionWindow {
 }
 
 enum TimelineActivityLoader {
+  // Stored card titles are always the English sentinel, regardless of UI language.
   private static let failedTitle = "Processing failed"
   private static let failureGroupingGapTolerance: TimeInterval = 60
 
