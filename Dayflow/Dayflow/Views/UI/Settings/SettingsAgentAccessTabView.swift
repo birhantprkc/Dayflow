@@ -23,12 +23,12 @@ struct SettingsAgentAccessTabView: View {
 
   private var clientsSection: some View {
     SettingsSection(
-      title: "Connect to AI tools",
+      title: String(localized: "Connect to AI tools"),
       subtitle:
-        "Let Codex, Claude, Cursor, and other AI tools read your Dayflow timeline. "
-        + "Connections are saved to each tool's user configuration, so Dayflow is "
-        + "available across projects on this Mac. Nothing leaves your Mac except what "
-        + "you send in your own conversations."
+        String(
+          localized:
+            "Let Codex, Claude, Cursor, and other AI tools read your Dayflow timeline. Connections are saved to each tool's user configuration, so Dayflow is available across projects on this Mac. Nothing leaves your Mac except what you send in your own conversations."
+        )
     ) {
       VStack(alignment: .leading, spacing: 0) {
         ForEach(viewModel.clients) { row in
@@ -42,12 +42,13 @@ struct SettingsAgentAccessTabView: View {
         }
 
         SettingsRow(
-          label: "Other apps",
-          subtitle: "Paste this into any MCP client's configuration.",
+          label: String(localized: "Other apps"),
+          subtitle: String(localized: "Paste this into any MCP client's configuration."),
           showsDivider: false
         ) {
           SettingsSecondaryButton(
-            title: viewModel.copiedSnippet ? "Copied" : "Copy config",
+            title: viewModel.copiedSnippet
+              ? String(localized: "Copied") : String(localized: "Copy config"),
             systemImage: viewModel.copiedSnippet ? "checkmark" : "doc.on.doc"
           ) {
             viewModel.copySnippet()
@@ -72,12 +73,12 @@ struct SettingsAgentAccessTabView: View {
             .font(.custom("Figtree", size: 12))
             .foregroundColor(SettingsStyle.secondary)
         }
-        SettingsSecondaryButton(title: "Disconnect") {
+        SettingsSecondaryButton(title: String(localized: "Disconnect")) {
           viewModel.disconnect(row.client)
         }
       }
     case .available:
-      SettingsSecondaryButton(title: "Connect") {
+      SettingsSecondaryButton(title: String(localized: "Connect")) {
         viewModel.connect(row.client)
       }
     case .checking:
@@ -99,7 +100,7 @@ struct SettingsAgentAccessTabView: View {
       .font(.custom("Figtree", size: 12))
       .foregroundColor(SettingsStyle.secondary)
     case .failed:
-      SettingsSecondaryButton(title: "Retry") {
+      SettingsSecondaryButton(title: String(localized: "Retry")) {
         viewModel.connect(row.client)
       }
     case .openedInstaller:
@@ -111,17 +112,19 @@ struct SettingsAgentAccessTabView: View {
 
   private var editsSection: some View {
     SettingsSection(
-      title: "Allow edits",
+      title: String(localized: "Allow edits"),
       subtitle:
-        "Off means AI tools can read your timeline but never change it. On lets them "
-        + "rename activities, manage categories, and set day goals. Deleting anything "
-        + "always asks you first, and every edit is logged."
+        String(
+          localized:
+            "Off means AI tools can read your timeline but never change it. On lets them rename activities, manage categories, and set day goals. Deleting anything always asks you first, and every edit is logged."
+        )
     ) {
       VStack(alignment: .leading, spacing: 0) {
         SettingsRow(
-          label: viewModel.editsEnabled ? "Edits are on" : "Edits are off",
+          label: viewModel.editsEnabled
+            ? String(localized: "Edits are on") : String(localized: "Edits are off"),
           subtitle: viewModel.editsEnabled
-            ? "AI tools can make changes through Dayflow while it's running."
+            ? String(localized: "AI tools can make changes through Dayflow while it's running.")
             : nil,
           showsDivider: false
         ) {
@@ -133,21 +136,23 @@ struct SettingsAgentAccessTabView: View {
 
   private var terminalSection: some View {
     SettingsSection(
-      title: "Terminal command",
+      title: String(localized: "Terminal command"),
       subtitle:
-        "Adds a `dayflow` command so you can see your timeline from any terminal. "
-        + "This isn't a separate package like an npm install: it links to the CLI already "
-        + "inside Dayflow, so the CLI always stays in sync with the app and can't break "
-        + "when the app updates. Nothing is downloaded and your shell configuration isn't touched."
+        String(
+          localized:
+            "Adds a `dayflow` command so you can see your timeline from any terminal. This isn't a separate package like an npm install: it links to the CLI already inside Dayflow, so the CLI always stays in sync with the app and can't break when the app updates. Nothing is downloaded and your shell configuration isn't touched."
+        )
     ) {
       VStack(alignment: .leading, spacing: 12) {
         SettingsRow(
-          label: viewModel.terminalInstalled ? "Installed" : "Not installed",
-          subtitle: viewModel.terminalInstalled ? "Try: dayflow timeline" : nil,
+          label: viewModel.terminalInstalled
+            ? String(localized: "Installed") : String(localized: "Not installed"),
+          subtitle: viewModel.terminalInstalled ? String(localized: "Try: dayflow timeline") : nil,
           showsDivider: false
         ) {
           SettingsSecondaryButton(
-            title: viewModel.terminalInstalled ? "Remove" : "Install"
+            title: viewModel.terminalInstalled
+              ? String(localized: "Remove") : String(localized: "Install")
           ) {
             viewModel.toggleTerminalCommand()
           }
@@ -200,7 +205,7 @@ private struct SettingsCommandBlock: View {
         HStack(spacing: 5) {
           Image(systemName: copied ? "checkmark" : "doc.on.doc")
             .font(.system(size: 11, weight: .medium))
-          Text(copied ? "Copied" : "Copy")
+          Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
             .font(.custom("Figtree", size: 12))
             .fontWeight(.medium)
         }
@@ -218,7 +223,11 @@ private struct SettingsCommandBlock: View {
       }
       .buttonStyle(.plain)
       .pointingHandCursor()
-      .accessibilityLabel(copied ? "Terminal command copied" : "Copy terminal command")
+      .accessibilityLabel(
+        copied
+          ? String(localized: "Terminal command copied")
+          : String(localized: "Copy terminal command")
+      )
       .padding(.trailing, 6)
     }
   }
@@ -248,10 +257,10 @@ final class AgentAccessViewModel: ObservableObject {
       switch state {
       case .connected:
         return client == .codex
-          ? "Restart Codex to pick up the connection."
-          : "Restart it to pick up the connection."
+          ? String(localized: "Restart Codex to pick up the connection.")
+          : String(localized: "Restart it to pick up the connection.")
       case .failed(let message): return message
-      case .openedInstaller: return "Approve the install dialog it just showed."
+      case .openedInstaller: return String(localized: "Approve the install dialog it just showed.")
       default: return nil
       }
     }
