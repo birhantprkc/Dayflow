@@ -53,7 +53,6 @@ final class FlowSessionMirror: ObservableObject {
   /// The tub only stays for its 8-second intro clip, then the creature climbs
   /// out and the overlay clears so the break doesn't sit on the screen.
   private var breakOverlayTimer: Timer?
-  private static let breakOverlaySeconds: TimeInterval = 8
   private var snoozeUntil: Date?
   /// Nudges shown for the current distraction incident; the second one in a
   /// row escalates the creature to the fire animation.
@@ -119,6 +118,34 @@ final class FlowSessionMirror: ObservableObject {
 
   // MARK: - Distraction simulation (⌘⇧D fallback for testing)
 
+  /// Debug panel: bring the creature in with the given layout, session or not.
+  func debugNudge(variant: FlowNudgeVariant, escalated: Bool = false) {
+    FlowNudgeVariant.current = variant
+    FlowAgentSettings.shared.nudgeVariant = variant
+    if overlay != .hidden {
+      // The variant is fixed per appearance; clear first so the new layout
+      // (and its entrance clip) applies.
+      overlay = .hidden
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+        self?.debugNudge(variant: variant, escalated: escalated)
+      }
+      return
+    }
+    snoozeUntil = nil
+    overlay = .nudge(
+      message: String(localized: "Psst... I think you're getting distracted!"),
+      escalated: escalated)
+  }
+
+  /// Debug panel: show the break tub with its normal auto-dismiss.
+  func debugBreak() { showBreak() }
+
+  /// Debug panel: a toast with arbitrary text.
+  func debugToast(_ message: String) { showToast(message) }
+
+  /// Debug panel: dismiss whatever is on screen (plays the exit clip).
+  func debugHideOverlay() { overlay = .hidden }
+
   /// Fires the distraction nudge as if the detection agent had flagged the
   /// user. Quiet mode records nothing visible, matching the design.
   func simulateDistraction() {
@@ -166,7 +193,7 @@ final class FlowSessionMirror: ObservableObject {
   func agentPraise(message: String) {
     guard snapshot.phase == .active, snapshot.alertStyle != .quiet else { return }
     if case .nudge = overlay { return }
-    showToast(message, seconds: 5)
+    showToast(message, seconds: FlowAgentSettings.shared.praiseSeconds)
   }
 
   // MARK: - Overlay pill actions
@@ -287,7 +314,8 @@ final class FlowSessionMirror: ObservableObject {
 
   // MARK: - Toasts
 
-  private func showToast(_ message: String, seconds: TimeInterval = 4) {
+  private func showToast(_ message: String, seconds: TimeInterval? = nil) {
+    let seconds = seconds ?? FlowAgentSettings.shared.toastSeconds
     overlay = .toast(message: message)
     toastTimer?.invalidate()
     toastTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { _ in
@@ -309,7 +337,7 @@ final class FlowSessionMirror: ObservableObject {
     overlay = .onBreak
     breakOverlayTimer?.invalidate()
     breakOverlayTimer = Timer.scheduledTimer(
-      withTimeInterval: Self.breakOverlaySeconds, repeats: false
+      withTimeInterval: FlowAgentSettings.shared.breakOverlaySeconds, repeats: false
     ) { _ in
       MainActor.assumeIsolated {
         let mirror = FlowSessionMirror.shared

@@ -16,6 +16,7 @@
 //
 
 import AppKit
+import Combine
 import Foundation
 import ScreenCaptureKit
 
@@ -32,6 +33,10 @@ final class FlowDistractionAgent: ObservableObject {
 
   /// Model replies (and turn failures) for the DEBUG log panel in FlowView.
   @Published private(set) var transcript: [TranscriptEntry] = []
+  /// One-line state for the debug panel ("Watching · tick 12s ago").
+  @Published private(set) var statusLine = "Not running"
+  @Published private(set) var lastTickAt: Date?
+  @Published private(set) var lastTickSeconds: Double?
 
   /// The model's per-turn reply. Anything unparseable is treated as
   /// on-task/no-action so a flaky turn can never fire a bogus nudge.
@@ -62,26 +67,33 @@ final class FlowDistractionAgent: ObservableObject {
   private var sessionStartedAt = Date()
   private var sessionEndsAt: Date?
   private var workDirectory: URL?
+  /// The snapshot the current conversation was briefed with, so a lost Codex
+  /// thread (or a settings change) can re-brief without the mirror's help.
+  private var lastSnapshot: FlowNativeSnapshot?
+  /// Number of re-briefs this session, so a broken Codex install can't loop.
+  private var rebriefs = 0
 
-  private static var tickInterval: TimeInterval {
-    let stored = UserDefaults.standard.double(forKey: "flowAgentTickSeconds")
-    return stored >= 5 ? stored : 15
-  }
+  /// Model, reasoning, cadence, prompt… all live in FlowAgentSettings so the
+  /// debug panel can change them while a session runs.
+  private var settings: FlowAgentSettings { FlowAgentSettings.shared }
+  private var cancellables: Set<AnyCancellable> = []
 
-  /// Model for distraction ticks; takes the screenshot directly. Astra for
-  /// now (was gpt-5.6-luna, the model the Codex transcription path uses).
-  private static let model: String? = "gpt-6-astra"
-
-  /// Set to a text-only model (e.g. "gpt-5.3-codex-spark") to send Apple
-  /// Vision OCR text instead of the screenshot. nil = normal image ticks.
-  private static let temporaryTextOnlyModel: String? = nil
-
-  /// Spark rejects reasoning summaries (a user's global config.toml may set
-  /// model_reasoning_summary = "detailed"), and the agent never wants them
-  /// anyway — ticks should produce nothing but the JSON verdict.
+  /// Some models reject reasoning summaries (a user's global config.toml may
+  /// set model_reasoning_summary = "detailed"), and the agent never wants
+  /// them anyway — ticks should produce nothing but the JSON verdict.
   private static let codexConfigOverrides = ["model_reasoning_summary=none"]
 
-  private init() {}
+  private init() {
+    // A new cadence applies to the running session immediately.
+    FlowAgentSettings.shared.$tickSeconds
+      .dropFirst()
+      .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+      .sink { [weak self] _ in
+        guard let self, self.codexSessionId != nil else { return }
+        self.scheduleTimer()
+      }
+      .store(in: &cancellables)
+  }
 
   var isRunning: Bool { generationIsLive && codexSessionId != nil }
   private var generationIsLive: Bool { tickTimer != nil || tickInFlight }
@@ -89,7 +101,23 @@ final class FlowDistractionAgent: ObservableObject {
   // MARK: - Lifecycle (driven by FlowSessionMirror phase transitions)
 
   func start(with snapshot: FlowNativeSnapshot) {
+    start(with: snapshot, rebrief: false)
+  }
+
+  /// `rebrief` keeps the transcript and counts toward the re-brief cap; used
+  /// when the Codex thread is lost mid-session or the debug panel restarts
+  /// the agent with new settings.
+  private func start(with snapshot: FlowNativeSnapshot, rebrief: Bool) {
     stop()
+    lastSnapshot = snapshot
+    guard settings.agentEnabled else {
+      statusLine = "Disabled"
+      return
+    }
+    if !rebrief {
+      rebriefs = 0
+      transcript = []
+    }
 
     goals = snapshot.goals ?? []
     alertStyle = snapshot.alertStyle
@@ -100,7 +128,6 @@ final class FlowDistractionAgent: ObservableObject {
     pendingNotes = []
     consecutiveFailures = 0
     paused = false
-    transcript = []
 
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent("DayflowFlowAgent-\(UUID().uuidString)", isDirectory: true)
@@ -113,7 +140,10 @@ final class FlowDistractionAgent: ObservableObject {
     let runner = self.runner
 
     print("[FlowAgent] Starting Codex conversation (style: \(alertStyle.rawValue))")
+    statusLine = rebrief ? "Re-briefing \(settings.model)…" : "Briefing \(settings.model)…"
     tickInFlight = true
+    let model = settings.model
+    let effort = settings.reasoningEffort
     Task.detached(priority: .utility) {
       var sessionId: String?
       var replyText = ""
@@ -123,8 +153,8 @@ final class FlowDistractionAgent: ObservableObject {
           tool: .codex,
           prompt: prompt,
           workingDirectory: directory,
-          model: Self.temporaryTextOnlyModel ?? Self.model,
-          reasoningEffort: "low",
+          model: model,
+          reasoningEffort: effort,
           codexConfigOverrides: Self.codexConfigOverrides
         )
         for try await event in stream {
@@ -154,10 +184,12 @@ final class FlowDistractionAgent: ObservableObject {
     guard let sessionId else {
       print("[FlowAgent] Could not start Codex session: \(error ?? "no thread id in output")")
       appendTranscript("Couldn't start the agent: \(error ?? "no thread id in output")")
+      statusLine = "Failed to start"
       AnalyticsService.shared.capture("flow_agent_start_failed")
       cleanupWorkDirectory()
       return
     }
+    statusLine = "Watching (\(settings.model), \(settings.reasoningEffort))"
 
     print("[FlowAgent] Codex session started: \(sessionId), first reply: \(reply.prefix(200))")
     appendTranscript(reply)
@@ -188,7 +220,42 @@ final class FlowDistractionAgent: ObservableObject {
     pendingNotes = []
     lastReportedOffTask = false
     cleanupWorkDirectory()
+    statusLine = "Not running"
   }
+
+  // MARK: - Debug panel controls
+
+  /// Starts a fresh Codex conversation for the current session with whatever
+  /// the settings say now (model, prompt, cadence…).
+  func restart() {
+    let mirror = FlowSessionMirror.shared
+    guard mirror.snapshot.phase == .active || mirror.snapshot.phase == .onBreak else {
+      appendTranscript("No active session to watch.")
+      return
+    }
+    appendTranscript("Restarting the agent with the current settings.")
+    start(with: mirror.snapshot, rebrief: true)
+    if mirror.snapshot.phase == .onBreak { paused = true }
+  }
+
+  /// Take a screenshot and ask the model right now, off the timer.
+  func tickNow() {
+    guard codexSessionId != nil else {
+      appendTranscript("Agent isn't running.")
+      return
+    }
+    let wasPaused = paused
+    paused = false
+    tick()
+    paused = wasPaused
+  }
+
+  func clearTranscript() {
+    transcript = []
+  }
+
+  /// The briefing exactly as it would be sent now (for the debug panel).
+  var currentBriefing: String { initialPrompt() }
 
   /// Queue a line of context (snooze, back-to-work…) for the next tick.
   /// `markRefocused` also resets the off-task flag so a later distraction
@@ -204,7 +271,7 @@ final class FlowDistractionAgent: ObservableObject {
   private func scheduleTimer() {
     tickTimer?.invalidate()
     tickTimer = Timer.scheduledTimer(
-      withTimeInterval: Self.tickInterval, repeats: true
+      withTimeInterval: max(5, settings.tickSeconds), repeats: true
     ) { _ in
       MainActor.assumeIsolated {
         FlowDistractionAgent.shared.tick()
@@ -222,16 +289,23 @@ final class FlowDistractionAgent: ObservableObject {
     pendingNotes = []
     let runner = self.runner
     let shotURL = directory.appendingPathComponent("shot-\(Int(Date().timeIntervalSince1970)).jpg")
+    let model = settings.model
+    let effort = settings.reasoningEffort
+    let textOnly = settings.textOnly
+    let shotHeight = settings.screenshotHeight
+    let quality = settings.jpegQuality
+    let timeout = settings.tickTimeoutSeconds
+    let startedAt = Date()
 
     Task.detached(priority: .utility) {
       var replyText: String?
       var errorText: String?
       do {
-        try await Self.captureScreenshotJPEG(to: shotURL)
-        // TEMPORARY (see temporaryTextOnlyModel): OCR text instead of the image.
+        try await Self.captureScreenshotJPEG(to: shotURL, height: shotHeight, quality: quality)
+        // OCR text instead of the image for text-only models.
         var prompt = message
         var imagePaths = [shotURL.path]
-        if Self.temporaryTextOnlyModel != nil {
+        if textOnly {
           let screenText = Self.recognizeScreenText(at: shotURL)
           prompt +=
             "\nScreen text (Apple OCR of the current screenshot):\n\(screenText)\nReply with the JSON object only."
@@ -244,11 +318,11 @@ final class FlowDistractionAgent: ObservableObject {
           prompt: prompt,
           workingDirectory: directory,
           imagePaths: imagePaths,
-          model: Self.temporaryTextOnlyModel ?? Self.model,
-          reasoningEffort: "low",
+          model: model,
+          reasoningEffort: effort,
           codexResumeSessionId: sessionId,
           codexConfigOverrides: Self.codexConfigOverrides,
-          timeoutSeconds: 60
+          timeoutSeconds: timeout
         )
         if result.exitCode == 0 {
           replyText = result.stdout
@@ -260,25 +334,42 @@ final class FlowDistractionAgent: ObservableObject {
       }
       try? FileManager.default.removeItem(at: shotURL)
 
+      let elapsed = Date().timeIntervalSince(startedAt)
       await MainActor.run {
-        FlowDistractionAgent.shared.finishTick(generation: gen, reply: replyText, error: errorText)
+        FlowDistractionAgent.shared.finishTick(
+          generation: gen, reply: replyText, error: errorText, seconds: elapsed)
       }
     }
   }
 
-  private func finishTick(generation gen: Int, reply: String?, error: String?) {
+  private func finishTick(generation gen: Int, reply: String?, error: String?, seconds: Double) {
     guard gen == generation else { return }
     tickInFlight = false
+    lastTickAt = Date()
+    lastTickSeconds = seconds
 
     guard let reply else {
       consecutiveFailures += 1
       print("[FlowAgent] Tick failed (\(consecutiveFailures)): \(error ?? "unknown")")
       appendTranscript("Turn failed: \(error ?? "unknown")")
-      if consecutiveFailures >= 3 {
-        print("[FlowAgent] Stopping after 3 consecutive failures")
-        appendTranscript("Agent stopped after 3 consecutive failures.")
+      // Codex lost the conversation (its rollout file is gone, e.g. a full
+      // disk or a pruned sessions dir). Resuming will never work again, so
+      // start a fresh thread instead of burning through the failure budget.
+      if let error, error.contains("no rollout found") || error.contains("thread/resume"),
+        let snapshot = lastSnapshot, rebriefs < 3
+      {
+        rebriefs += 1
+        appendTranscript("Codex thread was lost; re-briefing on a new one (\(rebriefs)/3).")
+        start(with: snapshot, rebrief: true)
+        pendingNotes.append("(Re-briefed mid-session after the previous conversation was lost.)")
+        return
+      }
+      if consecutiveFailures >= settings.maxFailures {
+        print("[FlowAgent] Stopping after \(consecutiveFailures) consecutive failures")
+        appendTranscript("Agent stopped after \(consecutiveFailures) consecutive failures.")
         AnalyticsService.shared.capture("flow_agent_gave_up")
         stop()
+        statusLine = "Stopped after \(consecutiveFailures) failures"
       }
       return
     }
@@ -369,11 +460,10 @@ final class FlowDistractionAgent: ObservableObject {
         """
     }
 
-    // TEMPORARY (see temporaryTextOnlyModel): the evidence wording flips
-    // between screenshots and OCR text.
+    // The evidence wording flips between screenshots and OCR text.
     let evidenceIntro: String
     let evidenceJudging: String
-    if Self.temporaryTextOnlyModel != nil {
+    if settings.textOnly {
       evidenceIntro =
         "text extracted from a screenshot of their screen (Apple's OCR), the current time, "
         + "and the time left"
@@ -387,51 +477,75 @@ final class FlowDistractionAgent: ObservableObject {
       evidenceJudging = "- The screenshot is your only evidence."
     }
 
-    return """
-      You are the focus companion inside Dayflow, a Mac time-tracking app. The user just \
-      started a Flow focus session and you're watching over it. Roughly every 15 seconds \
-      you'll get a message with \(evidenceIntro). Your job: judge whether they're on task, \
-      and decide whether their focus buddy (a small pixel creature that peeks in from the \
-      screen edge) should say something.
-
-      SESSION
-      - Started at \(started).
-      - \(lengthLine)
-      - Alert style: \(alertStyle.rawValue).
-
-      THE USER'S STATED FOCUS
-      \(goalsBlock)
-
-      HOW TO JUDGE
-      - Be generous. Docs, searches, terminal work, Slack or email replies, and quick \
-      utility checks all plausibly serve the goals — count them as on task.
-      - One glance at something unrelated is not a distraction; a pattern across \
-      consecutive checks is (social feeds, YouTube, shopping, news rabbit holes).
-      \(evidenceJudging)
-      - If you're unsure, assume on task.
-
-      HOW TO REPLY
-      Reply to every message with exactly one JSON object and nothing else — no prose, no \
-      code fences, no explanation:
-      {"status": "on_task" | "off_task", "action": "none" | "nudge" | "praise", "message": "...", "reason": "..."}
-      - status: your read of the current check.
-      - action "nudge" makes the creature appear with your message. Write it yourself in \
-      the alert style's tone, but keep it SHORT: one sentence, 10 words max — it renders \
-      in a tiny speech bubble ("Twitter can wait — 12 minutes left!").
-      - action "praise" shows a brief encouragement, same 10-word cap. Use it sparingly — \
-      at most once every ten minutes or so, e.g. after a long on-task stretch or right \
-      after they recover from a distraction.
-      - message is required whenever action isn't "none". reason: a few words of evidence \
-      whenever status is "off_task".
-
-      ALERT STYLE
-      \(styleBlock)
-
-      Don't overthink the ticks: no analysis, no chain of reasoning in your reply. Most \
-      turns the correct answer is exactly {"status":"on_task","action":"none"}. Acknowledge \
-      this briefing now with that same JSON object.
-      """
+    let template = settings.briefingTemplate.trimmingCharacters(in: .whitespacesAndNewlines)
+    var prompt = template.isEmpty ? Self.briefingTemplate : template
+    let values: [String: String] = [
+      "{{started}}": started,
+      "{{length}}": lengthLine,
+      "{{style}}": alertStyle.rawValue,
+      "{{goals}}": goalsBlock,
+      "{{style_rules}}": styleBlock,
+      "{{evidence_intro}}": evidenceIntro,
+      "{{evidence_rules}}": evidenceJudging,
+      "{{tick_seconds}}": String(Int(settings.tickSeconds)),
+    ]
+    for (key, value) in values {
+      prompt = prompt.replacingOccurrences(of: key, with: value)
+    }
+    let extra = settings.extraInstructions.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !extra.isEmpty {
+      prompt += "\n\nADDITIONAL INSTRUCTIONS\n" + extra
+    }
+    return prompt
   }
+
+  /// The built-in briefing. Placeholders: {{started}}, {{length}}, {{style}},
+  /// {{goals}}, {{style_rules}}, {{evidence_intro}}, {{evidence_rules}},
+  /// {{tick_seconds}}. The debug panel can replace the whole thing.
+  static let briefingTemplate = """
+    You are the focus companion inside Dayflow, a Mac time-tracking app. The user just \
+    started a Flow focus session and you're watching over it. Roughly every {{tick_seconds}} seconds \
+    you'll get a message with {{evidence_intro}}. Your job: judge whether they're on task, \
+    and decide whether their focus buddy (a small pixel creature that peeks in from the \
+    screen edge) should say something.
+
+    SESSION
+    - Started at {{started}}.
+    - {{length}}
+    - Alert style: {{style}}.
+
+    THE USER'S STATED FOCUS
+    {{goals}}
+
+    HOW TO JUDGE
+    - Be generous. Docs, searches, terminal work, Slack or email replies, and quick \
+    utility checks all plausibly serve the goals — count them as on task.
+    - One glance at something unrelated is not a distraction; a pattern across \
+    consecutive checks is (social feeds, YouTube, shopping, news rabbit holes).
+    {{evidence_rules}}
+    - If you're unsure, assume on task.
+
+    HOW TO REPLY
+    Reply to every message with exactly one JSON object and nothing else — no prose, no \
+    code fences, no explanation:
+    {"status": "on_task" | "off_task", "action": "none" | "nudge" | "praise", "message": "...", "reason": "..."}
+    - status: your read of the current check.
+    - action "nudge" makes the creature appear with your message. Write it yourself in \
+    the alert style's tone, but keep it SHORT: one sentence, 10 words max — it renders \
+    in a tiny speech bubble ("Twitter can wait — 12 minutes left!").
+    - action "praise" shows a brief encouragement, same 10-word cap. Use it sparingly — \
+    at most once every ten minutes or so, e.g. after a long on-task stretch or right \
+    after they recover from a distraction.
+    - message is required whenever action isn't "none". reason: a few words of evidence \
+    whenever status is "off_task".
+
+    ALERT STYLE
+    {{style_rules}}
+
+    Don't overthink the ticks: no analysis, no chain of reasoning in your reply. Most \
+    turns the correct answer is exactly {"status":"on_task","action":"none"}. Acknowledge \
+    this briefing now with that same JSON object.
+    """
 
   private func tickMessage() -> String {
     let timeFormatter = DateFormatter()
@@ -489,7 +603,9 @@ final class FlowDistractionAgent: ObservableObject {
 
   /// One-shot capture of the main display, scaled to ~720p JPEG. Independent
   /// of the timeline recorder so Flow works even when recording is paused.
-  private nonisolated static func captureScreenshotJPEG(to url: URL) async throws {
+  private nonisolated static func captureScreenshotJPEG(
+    to url: URL, height: Int, quality: Double
+  ) async throws {
     let content = try await SCShareableContent.excludingDesktopWindows(
       false, onScreenWindowsOnly: true)
     guard let display = content.displays.first else {
@@ -500,8 +616,8 @@ final class FlowDistractionAgent: ObservableObject {
 
     let configuration = SCStreamConfiguration()
     let aspectRatio = Double(display.width) / Double(max(1, display.height))
-    configuration.height = 720
-    configuration.width = Int(720 * aspectRatio)
+    configuration.height = height
+    configuration.width = Int(Double(height) * aspectRatio)
     configuration.scalesToFit = true
     configuration.showsCursor = true
 
@@ -511,7 +627,8 @@ final class FlowDistractionAgent: ObservableObject {
     )
 
     let bitmap = NSBitmapImageRep(cgImage: image)
-    guard let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.6])
+    guard
+      let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality])
     else {
       throw NSError(
         domain: "FlowAgent", code: -2,
@@ -520,8 +637,8 @@ final class FlowDistractionAgent: ObservableObject {
     try jpegData.write(to: url)
   }
 
-  // TEMPORARY (see temporaryTextOnlyModel): full-screen OCR via the same Apple
-  // Vision recognizer the Claude transcription path uses.
+  // Full-screen OCR via the same Apple Vision recognizer the Claude
+  // transcription path uses (text-only mode).
   private nonisolated static func recognizeScreenText(at url: URL) -> String {
     let blocks = (try? AppleVisionClaudeFrameTextRecognizer().recognizeText(in: url)) ?? []
     let lines = blocks.filter { $0.confidence >= 0.3 }.map(\.text)
