@@ -29,7 +29,7 @@ struct GoalDurationPicker: View {
       GoalNumberColumn(
         value: hoursBinding,
         range: 0...12,
-        label: "Hours",
+        label: String(localized: "Hours"),
         step: 1,
         numberStackLeft: 5.25,
         numberStackTop: 12.89,
@@ -39,7 +39,7 @@ struct GoalDurationPicker: View {
       GoalNumberColumn(
         value: minuteBinding,
         range: 0...55,
-        label: "Mins",
+        label: String(localized: "Mins"),
         step: 5,
         numberStackLeft: 5.25,
         numberStackTop: 11.89,
@@ -158,7 +158,7 @@ private struct GoalNumberColumn: View {
   }
 
   private var labelWidth: CGFloat {
-    label == "Hours" ? 40 : 32
+    step == 1 ? 40 : 32
   }
 
   private func formattedValue(_ value: Int) -> String {
