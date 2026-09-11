@@ -110,7 +110,8 @@ struct BugReportView: View {
 
   private var contactLinks: some View {
     HStack(spacing: 12) {
-      linkButton(title: "Email", systemImage: "envelope.fill", action: composeEmail)
+      linkButton(
+        title: String(localized: "Email"), systemImage: "envelope.fill", action: composeEmail)
 
       DayflowSurfaceButton(
         action: openDiscord,
@@ -134,13 +135,20 @@ struct BugReportView: View {
         showShadow: true
       )
 
-      linkButton(title: "Book a call", systemImage: "calendar.badge.clock", action: bookCall)
+      linkButton(
+        title: String(localized: "Book a call"), systemImage: "calendar.badge.clock",
+        action: bookCall)
 
       Spacer(minLength: 0)
 
-      textButton(didCopyEmail ? "Copied!" : "Copy email", action: copyEmail)
       textButton(
-        didCopyDebugLogs ? "Copied!" : (isCopyingDebugLogs ? "Preparing…" : "Copy debug logs"),
+        didCopyEmail ? String(localized: "Copied!") : String(localized: "Copy email"),
+        action: copyEmail)
+      textButton(
+        didCopyDebugLogs
+          ? String(localized: "Copied!")
+          : (isCopyingDebugLogs
+            ? String(localized: "Preparing…") : String(localized: "Copy debug logs")),
         action: copyDebugLogs
       )
     }
