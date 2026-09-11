@@ -94,6 +94,6 @@ enum RecordingPrivacyPlaceholder {
 
   private static func displayName(_ applicationName: String) -> String {
     let trimmed = applicationName.trimmingCharacters(in: .whitespacesAndNewlines)
-    return trimmed.isEmpty ? "Private app" : trimmed
+    return trimmed.isEmpty ? String(localized: "Private app") : trimmed
   }
 }
