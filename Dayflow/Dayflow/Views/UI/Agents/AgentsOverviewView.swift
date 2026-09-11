@@ -99,12 +99,22 @@ struct AgentsOverviewView: View {
     .pointingHandCursor()
   }
 
-  private var dayHeading: String {
-    guard let date = DateFormatter.yyyyMMdd.date(from: recap.day) else { return "Today" }
+  /// Month and day in the current locale's order and script (e.g. "July 6", "6. Juli", "7月6日").
+  private static let dayHeadingFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateFormat = "MMMM d"
-    let prefix = Calendar.current.isDateInToday(date) ? "Today, " : ""
-    return prefix + formatter.string(from: date)
+    formatter.setLocalizedDateFormatFromTemplate("MMMMd")
+    return formatter
+  }()
+
+  private var dayHeading: String {
+    guard let date = DateFormatter.yyyyMMdd.date(from: recap.day) else {
+      return String(localized: "Today")
+    }
+    let dayText = Self.dayHeadingFormatter.string(from: date)
+    if Calendar.current.isDateInToday(date) {
+      return String(localized: "Today, \(dayText)")
+    }
+    return dayText
   }
 
   private var isViewingToday: Bool {
@@ -118,7 +128,11 @@ struct AgentsOverviewView: View {
     let formatter = DateFormatter()
     formatter.timeStyle = .short
     formatter.dateStyle = .none
-    return "Generated \(formatter.string(from: date))"
+    return String(
+      localized: "Generated \(formatter.string(from: date))",
+      comment:
+        "Caption under the refresh button. The argument is a clock time such as 3:45 PM, i.e. 'Generated at 3:45 PM'."
+    )
   }
 
   private var refreshButton: some View {
@@ -152,8 +166,9 @@ struct AgentsOverviewView: View {
   /// A refresh always regenerates *today's* recap, so make that explicit
   /// whenever a past day is on screen.
   private var refreshButtonTitle: String {
-    if isRefreshing { return "Refreshing…" }
-    return isViewingToday ? "Refresh recap" : "Generate today's recap"
+    if isRefreshing { return String(localized: "Refreshing…") }
+    return isViewingToday
+      ? String(localized: "Refresh recap") : String(localized: "Generate today's recap")
   }
 
   private func blobPosition(index: Int, in size: CGSize) -> CGPoint {
