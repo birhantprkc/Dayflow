@@ -30,10 +30,6 @@ struct WeeklyOverviewSection: View {
     static let barsWidth: CGFloat = 836
     static let axisWidth: CGFloat = 837
     static let footerHeight: CGFloat = 65
-
-    static let dayLabels = [
-      "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm",
-    ]
   }
 
   private var topCardShape: UnevenRoundedRectangle {
@@ -95,20 +91,24 @@ struct WeeklyOverviewSection: View {
   private var footerPanel: some View {
     HStack(spacing: 0) {
       WeeklyOverviewSummaryGroup(
-        title: "Context switch",
+        title: String(localized: "Context switch"),
         metrics: [
-          .init(label: "Total", value: "\(snapshot.contextSwitchTotal) times"),
-          .init(label: "Average", value: "\(snapshot.contextSwitchAverage) times / day"),
+          .init(label: String(localized: "Total"), value: "\(snapshot.contextSwitchTotal) times"),
+          .init(
+            label: String(localized: "Average"),
+            value: "\(snapshot.contextSwitchAverage) times / day"),
         ]
       )
       .frame(width: Design.summaryDividerX, alignment: .leading)
 
       WeeklyOverviewSummaryGroup(
-        title: "Focus",
+        title: String(localized: "Focus"),
         metrics: [
-          .init(label: "Total length", value: compactDurationText(snapshot.totalFocusMinutes)),
-          .init(label: "Longest duration", value: longestFocusText),
-          .init(label: "Primary focus", value: primaryFocusText),
+          .init(
+            label: String(localized: "Total length"),
+            value: compactDurationText(snapshot.totalFocusMinutes)),
+          .init(label: String(localized: "Longest duration"), value: longestFocusText),
+          .init(label: String(localized: "Primary focus"), value: primaryFocusText),
         ]
       )
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -156,16 +156,17 @@ struct WeeklyOverviewSection: View {
 
   private var longestFocusText: String {
     guard let longestFocus = snapshot.longestFocus else {
-      return "No focus yet"
+      return String(localized: "No focus yet")
     }
-    return "\(compactDurationText(longestFocus.minutes)), \(longestFocus.weekdayName)"
+    return String(
+      localized: "\(compactDurationText(longestFocus.minutes)), \(longestFocus.weekdayName)")
   }
 
   private var primaryFocusText: String {
     guard let primaryFocus = snapshot.primaryFocus else {
-      return "No focus yet"
+      return String(localized: "No focus yet")
     }
-    return "\(primaryFocus.name), \(compactDurationText(primaryFocus.minutes))"
+    return String(localized: "\(primaryFocus.name), \(compactDurationText(primaryFocus.minutes))")
   }
 
   private func compactDurationText(_ minutes: Int) -> String {
@@ -173,12 +174,12 @@ struct WeeklyOverviewSection: View {
     let remainingMinutes = minutes % 60
 
     if hours > 0 && remainingMinutes > 0 {
-      return "\(hours)hr \(remainingMinutes)m"
+      return String(localized: "\(hours)hr \(remainingMinutes)m")
     }
     if hours > 0 {
-      return "\(hours)hr"
+      return String(localized: "\(hours)hr")
     }
-    return "\(remainingMinutes)m"
+    return String(localized: "\(remainingMinutes)m")
   }
 }
 
@@ -197,9 +198,10 @@ private struct WeeklyOverviewTimelineChart: View {
     static let segmentHeight: CGFloat = 12
     static let rowFill = WeeklyPalette.rowFill
     static let rowBorder = WeeklyPalette.rowBorder
-    static let axisLabels = [
-      "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm",
-    ]
+    /// Hour ticks from 9 AM to 6 PM, formatted for the current locale.
+    static let axisLabels = (9...18).map { hour in
+      WeeklyDashboardBuilder.hourAxisLabel(minuteOfDay: Double(hour * 60))
+    }
   }
 
   var body: some View {
@@ -380,7 +382,7 @@ extension WeeklyOverviewSnapshot {
     rows: [
       WeeklyOverviewRow(
         id: "mon",
-        label: "Mon",
+        label: String(localized: "Mon"),
         weekdayName: "Monday",
         segments: [
           segment("mon-alignment-1", "alignment", "6CDACD", 555, 573),
@@ -393,7 +395,7 @@ extension WeeklyOverviewSnapshot {
       ),
       WeeklyOverviewRow(
         id: "tue",
-        label: "Tue",
+        label: String(localized: "Tue"),
         weekdayName: "Tuesday",
         segments: [
           segment("tue-testing", "testing", "FFA189", 547, 731),
@@ -404,7 +406,7 @@ extension WeeklyOverviewSnapshot {
       ),
       WeeklyOverviewRow(
         id: "wed",
-        label: "Wed",
+        label: String(localized: "Wed"),
         weekdayName: "Wednesday",
         segments: [
           segment("wed-alignment-1", "alignment", "6CDACD", 555, 572),
@@ -418,7 +420,7 @@ extension WeeklyOverviewSnapshot {
       ),
       WeeklyOverviewRow(
         id: "thu",
-        label: "Thu",
+        label: String(localized: "Thu"),
         weekdayName: "Thursday",
         segments: [
           segment("thu-alignment-1", "alignment", "6CDACD", 542, 603),
@@ -433,7 +435,7 @@ extension WeeklyOverviewSnapshot {
       ),
       WeeklyOverviewRow(
         id: "fri",
-        label: "Fri",
+        label: String(localized: "Fri"),
         weekdayName: "Friday",
         segments: [
           segment("fri-alignment-1", "alignment", "6CDACD", 547, 567),
