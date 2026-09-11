@@ -88,6 +88,8 @@ This document lists manual events, properties, and code locations. All events re
   - files: tools/dayflow-cli/Sources/dayflow/AgentUsageTelemetry.swift, Core/AgentAccess/AgentUsageTelemetryQueue.swift
 
 ## AgentPlayback
+- Launch and failure events include `attempt_id`, `requested_version`, `attempt_elapsed_seconds`, and `fallback_from_attempt_id` when recovering from another attempt.
+- Failure context includes `process_running`, `app_active`, `page_url`, `webview_loading`, and `system_uptime_seconds`. Native errors also include `error_domain`, `error_code`, `error_details`, and `error_user_info`. Process output includes Node version/executable, CLI path, and child exit code/signal. WebKit process termination callbacks do not provide a crash reason.
 - agentplayback_opened
   - props: `already_loaded: bool`
   - once per tab visit, including visits that fail to load; not emitted on every foreground transition
@@ -104,7 +106,7 @@ This document lists manual events, properties, and code locations. All events re
 - agentplayback_session_ended
   - props: `duration_seconds: number`, `reason: tab_closed|background|unavailable|app_exit`
   - one foreground viewing interval with the Agents tab selected and dashboard loaded; excludes downloads, hidden-tab time, and time in other apps; sum durations for total viewing time, not session counts for unique visits; crashes may lose the final interval
-  - privacy: all events use AnalyticsService and its analytics opt-in; no transcript text, project names, paths, URLs, terminal output, token costs, or user-selected dates; opting out discards the current viewing interval
+  - privacy: all events use AnalyticsService and its analytics opt-in; opting out discards the current viewing interval. Launch and runtime failure events additionally include unsanitized `error_message` and `process_output` (the captured output buffer, capped at 16,000 characters), which may contain paths, URLs, and other process-emitted content. Successful launches and viewing events do not include these fields.
   - files: Views/UI/Agents/AgentPlaybackView.swift, Views/UI/Agents/AgentPlaybackUsage.swift
 
 ## Settings & Privacy
