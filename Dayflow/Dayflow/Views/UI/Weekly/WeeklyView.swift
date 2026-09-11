@@ -168,7 +168,7 @@ struct WeeklyView: View {
 
               WeeklyExportableGraphic(
                 layout: layout,
-                title: "Weekly workflow",
+                title: String(localized: "Weekly workflow"),
                 headerTitle: dashboardSnapshot.workflow.title,
                 downloadButtonOrigin: CGPoint(x: 79, y: 16),
                 fileName: exportFileName("weekly-workflow"),
@@ -188,7 +188,7 @@ struct WeeklyView: View {
 
               WeeklyExportableGraphic(
                 layout: layout,
-                title: "Focus heatmap",
+                title: String(localized: "Focus heatmap"),
                 headerTitle: dashboardSnapshot.heatmap.title,
                 downloadButtonOrigin: CGPoint(x: 44, y: 34),
                 fileName: exportFileName("focus-heatmap"),
@@ -208,7 +208,7 @@ struct WeeklyView: View {
 
               WeeklyExportableGraphic(
                 layout: layout,
-                title: "Focus breakdown",
+                title: String(localized: "Focus breakdown"),
                 headerTitle: dashboardSnapshot.treemap.title,
                 downloadButtonOrigin: CGPoint(x: 40, y: 34),
                 fileName: exportFileName("focus-breakdown"),
@@ -221,7 +221,7 @@ struct WeeklyView: View {
 
               WeeklyExportableGraphic(
                 layout: layout,
-                title: "Weekly breakdown",
+                title: String(localized: "Weekly breakdown"),
                 downloadButtonOrigin: CGPoint(
                   x: layout.contentWidth * 72 / 1748,
                   y: layout.contentWidth * 64 / 1748
@@ -273,7 +273,7 @@ struct WeeklyView: View {
   ) -> some View {
     WeeklyExportableFixedGraphic(
       availableWidth: width,
-      title: "Weekly distribution",
+      title: String(localized: "Weekly distribution"),
       downloadButtonOrigin: CGPoint(x: 18, y: 16),
       fileName: exportFileName("weekly-distribution"),
       designWidth: WeeklyAdaptiveLayout.donutCardWidth,
@@ -294,8 +294,8 @@ struct WeeklyView: View {
   ) -> some View {
     WeeklyExportableFixedGraphic(
       availableWidth: width,
-      title: "Context charts",
-      headerTitle: "Context shift and distractions comparison",
+      title: String(localized: "Context charts"),
+      headerTitle: String(localized: "Context shift and distractions comparison"),
       downloadButtonOrigin: CGPoint(x: 24, y: 16),
       fileName: exportFileName("context-charts"),
       designWidth: WeeklyAdaptiveLayout.designContentWidth,
@@ -511,7 +511,7 @@ private struct WeeklyDataRequirementView: View {
 
   private var remainingText: String {
     let remainingMinutes = max(targetMinutes - recordedMinutes, 0)
-    return "\(durationText(remainingMinutes)) more to unlock this week"
+    return String(localized: "\(durationText(remainingMinutes)) more to unlock this week")
   }
 
   var body: some View {
@@ -555,18 +555,18 @@ private struct WeeklyDataRequirementView: View {
     let remainingMinutes = minutes % 60
 
     if minutes <= 0 {
-      return "0h"
+      return String(localized: "0h")
     }
 
     if hours == 0 {
-      return "\(remainingMinutes)m"
+      return String(localized: "\(remainingMinutes)m")
     }
 
     if remainingMinutes == 0 {
-      return "\(hours)h"
+      return String(localized: "\(hours)h")
     }
 
-    return "\(hours)h \(remainingMinutes)m"
+    return String(localized: "\(hours)h \(remainingMinutes)m")
   }
 }
 
@@ -957,8 +957,8 @@ private enum WeeklyGraphicExporter {
     }
 
     let savePanel = NSSavePanel()
-    savePanel.title = "Download graphic"
-    savePanel.prompt = "Download"
+    savePanel.title = String(localized: "Download graphic")
+    savePanel.prompt = String(localized: "Download")
     savePanel.nameFieldStringValue = fileName
     savePanel.allowedContentTypes = [.png]
     savePanel.canCreateDirectories = true
