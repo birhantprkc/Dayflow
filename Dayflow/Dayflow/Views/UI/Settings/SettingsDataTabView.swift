@@ -25,16 +25,16 @@ struct SettingsDataTabView: View {
       > timelineDisplayDate(from: viewModel.exportEndDate)
 
     return SettingsSection(
-      title: "Export your data",
-      subtitle: "Move your timeline into tools you already use."
+      title: String(localized: "Export your data"),
+      subtitle: String(localized: "Move your timeline into tools you already use.")
     ) {
       VStack(alignment: .leading, spacing: 14) {
         HStack(alignment: .center, spacing: 10) {
           datePill(
-            label: "From",
+            label: String(localized: "From"),
             date: viewModel.exportStartDate,
             isExpanded: activeExportDatePicker == .start,
-            accessibilityLabel: "Export start date",
+            accessibilityLabel: String(localized: "Export start date"),
             onTap: {
               withAnimation(.easeOut(duration: 0.2)) {
                 activeExportDatePicker = activeExportDatePicker == .start ? nil : .start
@@ -48,10 +48,10 @@ struct SettingsDataTabView: View {
             .foregroundColor(SettingsStyle.meta)
 
           datePill(
-            label: "To",
+            label: String(localized: "To"),
             date: viewModel.exportEndDate,
             isExpanded: activeExportDatePicker == .end,
-            accessibilityLabel: "Export end date",
+            accessibilityLabel: String(localized: "Export end date"),
             onTap: {
               withAnimation(.easeOut(duration: 0.2)) {
                 activeExportDatePicker = activeExportDatePicker == .end ? nil : .end
@@ -82,7 +82,8 @@ struct SettingsDataTabView: View {
 
         HStack(spacing: 12) {
           SettingsPrimaryButton(
-            title: viewModel.isExportingTimelineRange ? "Exporting…" : "Export as Markdown",
+            title: viewModel.isExportingTimelineRange
+              ? String(localized: "Exporting…") : String(localized: "Export as Markdown"),
             systemImage: viewModel.isExportingTimelineRange ? nil : "square.and.arrow.down",
             isLoading: viewModel.isExportingTimelineRange,
             isDisabled: rangeInvalid,
@@ -118,15 +119,15 @@ struct SettingsDataTabView: View {
     let dayString = DateFormatter.yyyyMMdd.string(from: normalizedDate)
 
     return SettingsSection(
-      title: "Reprocess day",
-      subtitle: "Re-run analysis for every batch on one timeline day."
+      title: String(localized: "Reprocess day"),
+      subtitle: String(localized: "Re-run analysis for every batch on one timeline day.")
     ) {
       VStack(alignment: .leading, spacing: 14) {
         datePill(
-          label: "Day",
+          label: String(localized: "Day"),
           date: viewModel.reprocessDayDate,
           isExpanded: isReprocessDatePickerExpanded,
-          accessibilityLabel: "Reprocess day",
+          accessibilityLabel: String(localized: "Reprocess day"),
           disabled: viewModel.isReprocessingDay,
           onTap: {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -169,7 +170,8 @@ struct SettingsDataTabView: View {
 
         HStack(spacing: 12) {
           SettingsPrimaryButton(
-            title: viewModel.isReprocessingDay ? "Reprocessing…" : "Reprocess day",
+            title: viewModel.isReprocessingDay
+              ? String(localized: "Reprocessing…") : String(localized: "Reprocess day"),
             systemImage: viewModel.isReprocessingDay ? nil : "arrow.clockwise",
             isLoading: viewModel.isReprocessingDay,
             action: { viewModel.showReprocessDayConfirm = true }
@@ -286,17 +288,12 @@ struct SettingsDataTabView: View {
 }
 
 // MARK: - Custom calendar grid
-//
-// Renamed and restyled — no amber accents, ink-brown selection circle,
-// hairline black stroke on the panel. Everything else (layout, keyboard
-// handling, month nav) preserved from the previous implementation.
 
 private struct DayflowCalendarGrid: View {
   @Binding var selectedDate: Date
   var onDateSelected: () -> Void
 
   @State private var displayedMonth: Date = Date()
-  @Environment(\.isEnabled) private var isEnabled
 
   private let calendar = Calendar.current
   private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
@@ -311,10 +308,10 @@ private struct DayflowCalendarGrid: View {
     .frame(maxWidth: 290, alignment: .leading)
     .background(
       RoundedRectangle(cornerRadius: 10, style: .continuous)
-        .fill(Color.white.opacity(isEnabled ? 0.85 : 0.45))
+        .fill(SettingsStyle.editorFill)
         .overlay(
           RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            .stroke(SettingsStyle.editorBorder, lineWidth: 1)
         )
     )
     .onAppear {
@@ -344,7 +341,7 @@ private struct DayflowCalendarGrid: View {
             .frame(width: 24, height: 24)
             .background(
               RoundedRectangle(cornerRadius: 6)
-                .fill(Color.black.opacity(0.04))
+                .fill(SettingsStyle.subtleFill)
             )
         }
         .buttonStyle(.plain)
@@ -359,7 +356,7 @@ private struct DayflowCalendarGrid: View {
             .frame(width: 24, height: 24)
             .background(
               RoundedRectangle(cornerRadius: 6)
-                .fill(Color.black.opacity(0.04))
+                .fill(SettingsStyle.subtleFill)
             )
         }
         .buttonStyle(.plain)
@@ -374,8 +371,8 @@ private struct DayflowCalendarGrid: View {
     let ordered = Array(symbols[(firstWeekday - 1)...]) + Array(symbols[..<(firstWeekday - 1)])
 
     return LazyVGrid(columns: columns, spacing: 2) {
-      ForEach(ordered, id: \.self) { symbol in
-        Text(symbol)
+      ForEach(ordered.indices, id: \.self) { index in
+        Text(ordered[index])
           .font(.custom("Figtree", size: 11))
           .fontWeight(.medium)
           .foregroundColor(SettingsStyle.meta)
@@ -422,7 +419,7 @@ private struct DayflowCalendarGrid: View {
             .frame(height: 30)
             .background {
               if isSelected {
-                Circle().fill(SettingsStyle.ink).frame(width: 28, height: 28)
+                Circle().fill(SettingsStyle.primaryButtonFill).frame(width: 28, height: 28)
               } else if isToday {
                 Circle()
                   .stroke(SettingsStyle.ink.opacity(0.35), lineWidth: 1.2)
@@ -438,7 +435,7 @@ private struct DayflowCalendarGrid: View {
 
   private var monthYearString: String {
     let formatter = DateFormatter()
-    formatter.dateFormat = "MMMM yyyy"
+    formatter.setLocalizedDateFormatFromTemplate("yMMMM")
     return formatter.string(from: displayedMonth)
   }
 
