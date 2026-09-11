@@ -560,7 +560,7 @@ final class ChatService: ObservableObject {
       return lines.joined(separator: "\n\n")
     case .codex, .claude:
       if isResume, let sessionId = request.sessionId {
-        return "[Resuming session \(sessionId)] \(request.prompt)"
+        return String(localized: "[Resuming session \(sessionId)] \(request.prompt)")
       }
       return request.prompt
     }
