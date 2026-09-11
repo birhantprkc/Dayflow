@@ -73,7 +73,7 @@ struct ThumbRatingButtons: View {
 
 struct TimelineRateSummaryView: View {
 
-  var title: String = "Rate this summary"
+  var title: String = String(localized: "Rate this summary")
   var isEnabled: Bool = true
   var activityID: String? = nil
   var onRate: ((TimelineRatingDirection) -> Void)? = nil
@@ -208,8 +208,8 @@ struct TimelineRateSummaryView: View {
     .accessibilityLabel(
       Text(
         deleteButtonState == .confirming
-          ? "Confirm delete activity card"
-          : "Delete activity card"
+          ? String(localized: "Confirm delete activity card")
+          : String(localized: "Delete activity card")
       )
     )
   }
