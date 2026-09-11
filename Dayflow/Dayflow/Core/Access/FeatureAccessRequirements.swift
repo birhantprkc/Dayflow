@@ -40,18 +40,18 @@ enum FeatureAccessRequirements {
     let remainingMinutes = minutes % 60
 
     if minutes == 0 {
-      return "0h / \(requiredHours)h"
+      return String(localized: "0h / \(requiredHours)h")
     }
 
     if hours == 0 {
-      return "\(remainingMinutes)m / \(requiredHours)h"
+      return String(localized: "\(remainingMinutes)m / \(requiredHours)h")
     }
 
     if remainingMinutes == 0 {
-      return "\(hours)h / \(requiredHours)h"
+      return String(localized: "\(hours)h / \(requiredHours)h")
     }
 
-    return "\(hours)h \(remainingMinutes)m / \(requiredHours)h"
+    return String(localized: "\(hours)h \(remainingMinutes)m / \(requiredHours)h")
   }
 
   private static func requiredBatchCount(forHours hours: Int) -> Int {
