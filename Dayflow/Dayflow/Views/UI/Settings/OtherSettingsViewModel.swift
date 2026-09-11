@@ -93,7 +93,7 @@ final class OtherSettingsViewModel: ObservableObject {
     let end = timelineDisplayDate(from: exportEndDate)
 
     guard start <= end else {
-      exportErrorMessage = "Start date must be on or before end date."
+      exportErrorMessage = String(localized: "Start date must be on or before end date.")
       exportStatusMessage = nil
       return
     }
@@ -149,7 +149,7 @@ final class OtherSettingsViewModel: ObservableObject {
 
     isReprocessingDay = true
     reprocessErrorMessage = nil
-    reprocessStatusMessage = "Starting reprocess for \(dayString)…"
+    reprocessStatusMessage = String(localized: "Starting reprocess for \(dayString)…")
 
     AnalysisManager.shared.reprocessDay(
       dayString,
@@ -164,7 +164,7 @@ final class OtherSettingsViewModel: ObservableObject {
           switch result {
           case .success:
             if self.reprocessStatusMessage == nil {
-              self.reprocessStatusMessage = "Reprocess completed."
+              self.reprocessStatusMessage = String(localized: "Reprocess completed.")
             }
           case .failure(let error):
             self.reprocessErrorMessage = error.localizedDescription
@@ -186,8 +186,8 @@ final class OtherSettingsViewModel: ObservableObject {
     dayFormatter.dateFormat = "yyyy-MM-dd"
 
     let savePanel = NSSavePanel()
-    savePanel.title = "Export timeline"
-    savePanel.prompt = "Export"
+    savePanel.title = String(localized: "Export timeline")
+    savePanel.prompt = String(localized: "Export")
     savePanel.nameFieldStringValue =
       "Dayflow timeline \(dayFormatter.string(from: startDate)) to \(dayFormatter.string(from: endDate)).md"
     savePanel.allowedContentTypes = [.text, .plainText]
@@ -199,7 +199,7 @@ final class OtherSettingsViewModel: ObservableObject {
 
     guard response == .OK, let url = savePanel.url else {
       exportStatusMessage = nil
-      exportErrorMessage = "Export canceled"
+      exportErrorMessage = String(localized: "Export canceled")
       return
     }
 
@@ -207,7 +207,10 @@ final class OtherSettingsViewModel: ObservableObject {
       try exportText.write(to: url, atomically: true, encoding: .utf8)
       exportErrorMessage = nil
       exportStatusMessage =
-        "Saved \(activityCount) activit\(activityCount == 1 ? "y" : "ies") across \(dayCount) day\(dayCount == 1 ? "" : "s") to \(url.lastPathComponent)"
+        String(
+          localized:
+            "Saved to \(url.lastPathComponent). Activities: \(activityCount); days: \(dayCount).",
+          comment: "Timeline export success. Counts are labeled totals, not English word suffixes.")
 
       AnalyticsService.shared.capture(
         "timeline_exported",
@@ -221,7 +224,7 @@ final class OtherSettingsViewModel: ObservableObject {
         ])
     } catch {
       exportStatusMessage = nil
-      exportErrorMessage = "Couldn't save file: \(error.localizedDescription)"
+      exportErrorMessage = String(localized: "Couldn't save file: \(error.localizedDescription)")
     }
   }
 }
