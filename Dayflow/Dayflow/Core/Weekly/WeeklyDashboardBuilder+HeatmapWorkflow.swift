@@ -33,9 +33,9 @@ extension WeeklyDashboardBuilder {
     }
 
     return WeeklyFocusHeatmapSnapshot(
-      title: "Focus and distraction heat map",
-      focusedLabel: "Focused work",
-      distractedLabel: "Distracted",
+      title: String(localized: "Focus and distraction heat map"),
+      focusedLabel: String(localized: "Focused work"),
+      distractedLabel: String(localized: "Distracted"),
       startMinute: visibleWindow.start,
       endMinute: visibleWindow.start + (Double(bucketCount) * bucketMinutes),
       bucketMinutes: bucketMinutes,
@@ -78,7 +78,7 @@ extension WeeklyDashboardBuilder {
     }
 
     return WeeklyWorkflowSnapshot(
-      title: "Your workflow this week",
+      title: String(localized: "Your workflow this week"),
       startMinute: visibleStart,
       endMinute: visibleEnd,
       slotMinutes: slotMinutes,
@@ -461,22 +461,28 @@ extension WeeklyDashboardBuilder {
     return stride(from: firstHour, through: lastHour, by: 60.0).map { minute in
       WeeklyWorkflowTimeLabel(
         id: "time-\(Int(minute))",
-        label: workflowClockLabel(from: minute),
+        label: hourAxisLabel(minuteOfDay: minute),
         minute: minute
       )
     }
   }
 
-  private static func workflowClockLabel(from minute: Double) -> String {
-    let totalMinutes = Int(minute.rounded())
-    let hour24 = (totalMinutes / 60) % 24
-    let minutePart = totalMinutes % 60
-    let hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12
-    let suffix = hour24 < 12 ? "am" : "pm"
-    if minutePart > 0 {
-      return String(format: "%d:%02d%@", hour12, minutePart, suffix)
+  /// Display-only chart axis label for a minute of the day, in the user's locale and
+  /// clock style (for example "9 AM", "09 Uhr", "午前9時"). Minutes past the hour are
+  /// only shown when non-zero. Identifiers stay numeric; only this text is localized.
+  static func hourAxisLabel(minuteOfDay: Double) -> String {
+    let totalMinutes = Int(minuteOfDay.rounded())
+    let hour = (totalMinutes / 60) % 24
+    let minute = totalMinutes % 60
+    guard
+      let date = Calendar.current.date(
+        bySettingHour: hour, minute: minute, second: 0, of: Date())
+    else { return "" }
+
+    if minute == 0 {
+      return date.formatted(Date.FormatStyle().hour(.defaultDigits(amPM: .abbreviated)))
     }
-    return "\(hour12)\(suffix)"
+    return date.formatted(date: .omitted, time: .shortened)
   }
 
   private static func workflowBucket(for fact: WeeklyCardFact) -> WeeklyWorkflowBucket {
