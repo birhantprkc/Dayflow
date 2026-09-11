@@ -114,8 +114,8 @@ struct TimelineReviewSummaryCard: View {
   private var subtitle: Text {
     let baseText =
       summary.hasData
-      ? "Last reviewed at \(formattedLastReviewedAt)."
-      : "No reviews yet."
+      ? String(localized: "Last reviewed at \(formattedLastReviewedAt).")
+      : String(localized: "No reviews yet.")
     var composed = Text(baseText)
       .foregroundColor(theme.textSecondary)
 
@@ -123,13 +123,10 @@ struct TimelineReviewSummaryCard: View {
       return composed
     }
 
-    let reviewText = "Review \(reviewCountText)"
     composed =
       composed
-      + Text(" \(reviewText)")
+      + Text(" Review \(cardsToReviewCount) cards to update your data.")
       .foregroundColor(Design.linkColor)
-      + Text(" to update your data.")
-      .foregroundColor(theme.textSecondary)
 
     return composed
   }
@@ -195,7 +192,7 @@ struct TimelineReviewSummaryCard: View {
     let placeholder = summary.hasData == false
     let distracted = ReviewMetric(
       id: "distracted",
-      label: "Distracted",
+      label: String(localized: "Distracted"),
       ratio: max(CGFloat(summary.distractedRatio), 0),
       durationText: durationText(summary.distractedDuration),
       style: metricStyle(
@@ -209,7 +206,7 @@ struct TimelineReviewSummaryCard: View {
 
     let neutral = ReviewMetric(
       id: "neutral",
-      label: "Neutral",
+      label: String(localized: "Neutral"),
       ratio: max(CGFloat(summary.neutralRatio), 0),
       durationText: durationText(summary.neutralDuration),
       style: metricStyle(
@@ -223,7 +220,7 @@ struct TimelineReviewSummaryCard: View {
 
     let productive = ReviewMetric(
       id: "productive",
-      label: "Focused",
+      label: String(localized: "Focused"),
       ratio: max(CGFloat(summary.productiveRatio), 0),
       durationText: durationText(summary.productiveDuration),
       style: metricStyle(
@@ -275,11 +272,11 @@ struct TimelineReviewSummaryCard: View {
     let minutes = totalMinutes % 60
 
     if hours > 0 && minutes > 0 {
-      return "\(hours)h \(minutes)m"
+      return String(localized: "\(hours)h \(minutes)m")
     } else if hours > 0 {
-      return "\(hours)h"
+      return String(localized: "\(hours)h")
     } else {
-      return "\(minutes)m"
+      return String(localized: "\(minutes)m")
     }
   }
 
@@ -289,13 +286,12 @@ struct TimelineReviewSummaryCard: View {
   }
 
   private var reviewCountText: String {
-    cardsToReviewCount == 1 ? "1 card" : "\(cardsToReviewCount) cards"
+    String(localized: "\(cardsToReviewCount) cards")
   }
 
   private static let timeFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateFormat = "h:mm a"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeStyle = .short
     return formatter
   }()
 }
