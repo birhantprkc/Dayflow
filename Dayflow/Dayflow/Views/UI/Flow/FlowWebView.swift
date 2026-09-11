@@ -13,7 +13,7 @@
 //                      {id, ok, payload|error}         // reply to a command
 //                      | {event, payload})             // unsolicited event
 //
-//  Commands: ready, getToken, state, simulateDistraction, openExternal.
+//  Commands: ready, getToken, state, simulateDistraction, getTimeline, openExternal.
 //  Events:   nativeState, overlayAction.
 //
 
@@ -131,6 +131,22 @@ struct FlowWebView: NSViewRepresentable {
       case "simulateDistraction":
         FlowSessionMirror.shared.simulateDistraction()
         reply(id: id, payload: [:])
+
+      case "getTimeline":
+        // The session summary wants the agent's activity timeline. Let a
+        // tick that's mid-flight land first so the read is as fresh as the
+        // last screenshot, then hand over the file's contents.
+        Task { @MainActor in
+          await FlowDistractionAgent.shared.settle()
+          let timeline = FlowSessionTimeline.shared
+          timeline.finish()
+          self.reply(
+            id: id,
+            payload: [
+              "activities": timeline.bridgePayload,
+              "file": timeline.fileURL.path,
+            ])
+        }
 
       case "openExternal":
         if let urlString = payload["url"] as? String, let url = URL(string: urlString),

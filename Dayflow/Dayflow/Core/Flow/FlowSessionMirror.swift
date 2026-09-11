@@ -105,6 +105,7 @@ final class FlowSessionMirror: ObservableObject {
     case (_, .idle), (_, .ended):
       isDistracted = false
       snoozeUntil = nil
+      FlowSessionTimeline.shared.finish()
       FlowDistractionAgent.shared.stop()
       if case (_, .idle) = (previous.phase, newSnapshot.phase) {
         overlay = .hidden
@@ -297,6 +298,7 @@ final class FlowSessionMirror: ObservableObject {
       snapshot.phase = .ended
       snapshot.persist()
       overlay = .sessionEnded
+      FlowSessionTimeline.shared.finish()
       FlowDistractionAgent.shared.stop()
       AnalyticsService.shared.capture("flow_session_natural_end")
     }

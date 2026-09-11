@@ -14,6 +14,7 @@ struct FlowDebugPanel: View {
   @ObservedObject private var agent = FlowDistractionAgent.shared
   @ObservedObject private var settings = FlowAgentSettings.shared
   @ObservedObject private var mirror = FlowSessionMirror.shared
+  @ObservedObject private var timeline = FlowSessionTimeline.shared
   @State private var isOpen = false
   @State private var tab: Tab = .log
   @State private var toastText = "Nice streak — keep it up!"
@@ -24,6 +25,7 @@ struct FlowDebugPanel: View {
     case agent = "Agent"
     case prompt = "Prompt"
     case overlay = "Overlay"
+    case timeline = "Timeline"
   }
 
   var body: some View {
@@ -67,6 +69,7 @@ struct FlowDebugPanel: View {
         case .agent: agentForm
         case .prompt: promptForm
         case .overlay: overlayForm
+        case .timeline: timelineList
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -316,6 +319,75 @@ struct FlowDebugPanel: View {
       }
       .padding(4)
     }
+  }
+
+  // MARK: Timeline
+
+  /// The activity timeline the agent is building for the session summary,
+  /// straight from FlowSessionTimeline (what the JSON file holds right now).
+  private var timelineList: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 8) {
+        Text(verbatim: timeline.fileURL.path)
+          .font(.system(size: 9, design: .monospaced))
+          .foregroundColor(.white.opacity(0.6))
+          .lineLimit(1)
+          .truncationMode(.middle)
+        Spacer()
+        if let at = timeline.updatedAt {
+          Text(verbatim: "updated " + at.formatted(.dateTime.hour().minute().second()))
+            .font(.system(size: 9, design: .monospaced))
+            .foregroundColor(.white.opacity(0.6))
+        }
+        smallButton("Reveal") {
+          NSWorkspace.shared.activateFileViewerSelecting([timeline.fileURL])
+        }
+      }
+      ScrollView {
+        VStack(alignment: .leading, spacing: 4) {
+          if timeline.entries.isEmpty {
+            Text("No activity logged yet. Entries appear after the first tick of a session.")
+              .font(.system(size: 11))
+              .foregroundColor(.white.opacity(0.6))
+          }
+          ForEach(timeline.entries) { entry in
+            HStack(alignment: .top, spacing: 8) {
+              Text(
+                verbatim:
+                  entry.startedAt.formatted(.dateTime.hour().minute()) + "–"
+                  + entry.endedAt.formatted(.dateTime.hour().minute())
+              )
+              .font(.system(size: 10, design: .monospaced))
+              .foregroundColor(.white.opacity(0.6))
+              .frame(width: 96, alignment: .leading)
+              RoundedRectangle(cornerRadius: 2)
+                .fill(timelineColor(entry.kind))
+                .frame(width: 6, height: 14)
+              Text(verbatim: entry.title)
+                .font(.system(size: 11))
+              Spacer()
+              Text(verbatim: Self.duration(entry.endedAt.timeIntervalSince(entry.startedAt)))
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(.white.opacity(0.6))
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+    }
+  }
+
+  private func timelineColor(_ kind: FlowSessionTimeline.Kind) -> Color {
+    switch kind {
+    case .focused: return Color(red: 0.36, green: 0.76, blue: 1.0)
+    case .distracted: return Color(red: 1.0, green: 0.55, blue: 0.4)
+    case .break: return Color.white.opacity(0.4)
+    }
+  }
+
+  private static func duration(_ seconds: TimeInterval) -> String {
+    let total = Int(seconds.rounded())
+    return total >= 60 ? "\(total / 60)m \(total % 60)s" : "\(total)s"
   }
 
   // MARK: Bits

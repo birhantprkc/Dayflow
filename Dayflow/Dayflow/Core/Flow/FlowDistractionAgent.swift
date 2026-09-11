@@ -45,6 +45,8 @@ final class FlowDistractionAgent: ObservableObject {
     let action: String?
     let message: String?
     let reason: String?
+    /// What the user is doing right now, a few words, for the session timeline.
+    let activity: String?
   }
 
   private let runner = ChatCLIProcessRunner()
@@ -72,6 +74,10 @@ final class FlowDistractionAgent: ObservableObject {
   private var lastSnapshot: FlowNativeSnapshot?
   /// Number of re-briefs this session, so a broken Codex install can't loop.
   private var rebriefs = 0
+  /// Callers waiting for the in-flight tick to land (the summary screen wants
+  /// the timeline as fresh as possible when the session ends).
+  private var settleWaiters: [CheckedContinuation<Void, Never>] = []
+  private var timeline: FlowSessionTimeline { FlowSessionTimeline.shared }
 
   /// Model, reasoning, cadence, prompt… all live in FlowAgentSettings so the
   /// debug panel can change them while a session runs.
@@ -128,6 +134,8 @@ final class FlowDistractionAgent: ObservableObject {
     pendingNotes = []
     consecutiveFailures = 0
     paused = false
+    // Same session on a re-brief or relaunch keeps what's been logged so far.
+    timeline.begin(sessionStartedAt: sessionStartedAt)
 
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent("DayflowFlowAgent-\(UUID().uuidString)", isDirectory: true)
@@ -201,12 +209,14 @@ final class FlowDistractionAgent: ObservableObject {
   func pause() {
     guard generationIsLive || codexSessionId != nil else { return }
     paused = true
+    timeline.beginBreak()
     noteUserEvent("The user is taking a break; screenshots were paused while it lasted.")
   }
 
   func resume() {
     guard codexSessionId != nil else { return }
     paused = false
+    timeline.endBreak()
     noteUserEvent("The user just came back from their break.")
   }
 
@@ -215,6 +225,7 @@ final class FlowDistractionAgent: ObservableObject {
     tickTimer?.invalidate()
     tickTimer = nil
     tickInFlight = false
+    resumeSettleWaiters()
     codexSessionId = nil
     paused = false
     pendingNotes = []
@@ -252,6 +263,25 @@ final class FlowDistractionAgent: ObservableObject {
 
   func clearTranscript() {
     transcript = []
+  }
+
+  /// Waits for the tick that's in flight (if any) to finish, so a caller
+  /// reading the timeline gets the freshest possible read. Never waits past
+  /// `timeout` seconds.
+  func settle(timeout: TimeInterval = 20) async {
+    guard tickInFlight else { return }
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      settleWaiters.append(continuation)
+      DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
+        self?.resumeSettleWaiters()
+      }
+    }
+  }
+
+  private func resumeSettleWaiters() {
+    let waiters = settleWaiters
+    settleWaiters = []
+    waiters.forEach { $0.resume() }
   }
 
   /// The briefing exactly as it would be sent now (for the debug panel).
@@ -296,6 +326,8 @@ final class FlowDistractionAgent: ObservableObject {
     let quality = settings.jpegQuality
     let timeout = settings.tickTimeoutSeconds
     let startedAt = Date()
+    // Which app is in front goes on the timeline entry (icon + merge key).
+    let front = FlowSessionTimeline.frontmostApp()
 
     Task.detached(priority: .utility) {
       var replyText: String?
@@ -337,16 +369,21 @@ final class FlowDistractionAgent: ObservableObject {
       let elapsed = Date().timeIntervalSince(startedAt)
       await MainActor.run {
         FlowDistractionAgent.shared.finishTick(
-          generation: gen, reply: replyText, error: errorText, seconds: elapsed)
+          generation: gen, reply: replyText, error: errorText, seconds: elapsed,
+          front: front)
       }
     }
   }
 
-  private func finishTick(generation gen: Int, reply: String?, error: String?, seconds: Double) {
+  private func finishTick(
+    generation gen: Int, reply: String?, error: String?, seconds: Double,
+    front: (bundleId: String?, iconURL: String?)
+  ) {
     guard gen == generation else { return }
     tickInFlight = false
     lastTickAt = Date()
     lastTickSeconds = seconds
+    defer { resumeSettleWaiters() }
 
     guard let reply else {
       consecutiveFailures += 1
@@ -378,13 +415,19 @@ final class FlowDistractionAgent: ObservableObject {
 
     guard let verdict = Self.parseVerdict(from: reply) else {
       print("[FlowAgent] Unparseable reply, treating as on-task: \(reply.prefix(200))")
+      timeline.extendOpenEntry()
       return
     }
-    handle(verdict: verdict)
+    handle(verdict: verdict, front: front)
   }
 
-  private func handle(verdict: Verdict) {
+  private func handle(verdict: Verdict, front: (bundleId: String?, iconURL: String?)) {
     let offTask = verdict.status == "off_task"
+    if !paused {
+      timeline.record(
+        title: verdict.activity ?? "", kind: offTask ? .distracted : .focused,
+        bundleId: front.bundleId, iconURL: front.iconURL)
+    }
     if offTask != lastReportedOffTask {
       lastReportedOffTask = offTask
       FlowSessionMirror.shared.agentReportedFocusChange(isDistracted: offTask)
@@ -528,8 +571,14 @@ final class FlowDistractionAgent: ObservableObject {
     HOW TO REPLY
     Reply to every message with exactly one JSON object and nothing else — no prose, no \
     code fences, no explanation:
-    {"status": "on_task" | "off_task", "action": "none" | "nudge" | "praise", "message": "...", "reason": "..."}
+    {"status": "on_task" | "off_task", "action": "none" | "nudge" | "praise", "message": "...", "reason": "...", "activity": "..."}
     - status: your read of the current check.
+    - activity: REQUIRED on every turn. What the user is doing right now, in 3–7 words, \
+    written like a timeline entry: "Address feedback on PR", "Scrolling on X", "Watching \
+    YouTube", "Reviewing checkout flow mockups in Figma". Name the concrete work or the \
+    site, not the app category. If they're still doing what they did on your previous \
+    turn, repeat your previous wording EXACTLY so consecutive checks merge into one \
+    timeline entry; change it only when they've genuinely moved on to something else.
     - action "nudge" makes the creature appear with your message. Write it yourself in \
     the alert style's tone, but keep it SHORT: one sentence, 10 words max — it renders \
     in a tiny speech bubble ("Twitter can wait — 12 minutes left!").
@@ -543,8 +592,9 @@ final class FlowDistractionAgent: ObservableObject {
     {{style_rules}}
 
     Don't overthink the ticks: no analysis, no chain of reasoning in your reply. Most \
-    turns the correct answer is exactly {"status":"on_task","action":"none"}. Acknowledge \
-    this briefing now with that same JSON object.
+    turns the correct answer is {"status":"on_task","action":"none","activity":"..."} with \
+    just the activity filled in. Acknowledge this briefing now with \
+    {"status":"on_task","action":"none","activity":"Starting the session"}.
     """
 
   private func tickMessage() -> String {
