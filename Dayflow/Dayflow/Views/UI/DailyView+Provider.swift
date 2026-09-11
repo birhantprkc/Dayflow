@@ -32,7 +32,7 @@ extension DailyView {
       return selectedProviderAvailability.detail
     }
 
-    return "Regenerate standup highlights"
+    return String(localized: "Regenerate standup highlights")
   }
   func dailyProviderButton(scale: CGFloat) -> some View {
     Button {
