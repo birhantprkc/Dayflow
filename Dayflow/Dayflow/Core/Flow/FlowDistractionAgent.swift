@@ -68,9 +68,9 @@ final class FlowDistractionAgent: ObservableObject {
     return stored >= 5 ? stored : 15
   }
 
-  /// Model for distraction ticks: fast, cheap, and takes the screenshot
-  /// directly (same model the Codex transcription path uses).
-  private static let model: String? = "gpt-5.6-luna"
+  /// Model for distraction ticks; takes the screenshot directly. Astra for
+  /// now (was gpt-5.6-luna, the model the Codex transcription path uses).
+  private static let model: String? = "gpt-6-astra"
 
   /// Set to a text-only model (e.g. "gpt-5.3-codex-spark") to send Apple
   /// Vision OCR text instead of the screenshot. nil = normal image ticks.
