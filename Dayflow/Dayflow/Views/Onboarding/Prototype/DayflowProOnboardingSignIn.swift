@@ -173,7 +173,8 @@ struct DayflowProOnboardingSignInPanel: View {
       HStack {
         Spacer()
         dayflowProPrimaryButton(
-          title: authManager.isBusy ? "Sending..." : "Send sign-in code",
+          title: authManager.isBusy
+            ? String(localized: "Sending...") : String(localized: "Send sign-in code"),
           enabled: canSendDayflowProCode,
           action: sendDayflowProCode
         )
@@ -201,12 +202,13 @@ struct DayflowProOnboardingSignInPanel: View {
 
       HStack(spacing: scaled(10)) {
         dayflowProSecondaryButton(
-          title: "Different email",
+          title: String(localized: "Different email"),
           action: showDayflowProEmailStep
         )
 
         dayflowProSecondaryButton(
-          title: authManager.isBusy ? "Sending..." : "Resend code",
+          title: authManager.isBusy
+            ? String(localized: "Sending...") : String(localized: "Resend code"),
           enabled: !authManager.isBusy,
           action: resendDayflowProCode
         )
@@ -214,7 +216,8 @@ struct DayflowProOnboardingSignInPanel: View {
         Spacer()
 
         dayflowProPrimaryButton(
-          title: authManager.isBusy ? "Checking..." : "Continue",
+          title: authManager.isBusy
+            ? String(localized: "Checking...") : String(localized: "Continue"),
           enabled: canVerifyDayflowProCode,
           action: verifyDayflowProCode
         )
@@ -242,13 +245,14 @@ struct DayflowProOnboardingSignInPanel: View {
 
       HStack(spacing: scaled(10)) {
         dayflowProPrimaryButton(
-          title: authManager.isBusy ? "Applying..." : "Apply code",
+          title: authManager.isBusy
+            ? String(localized: "Applying...") : String(localized: "Apply code"),
           enabled: canApplyDayflowProReferralCode,
           action: applyDayflowProReferralCode
         )
 
         dayflowProSecondaryButton(
-          title: "I don't have a code",
+          title: String(localized: "I don't have a code"),
           enabled: !authManager.isBusy,
           action: showDayflowProTrialOffer
         )
@@ -258,7 +262,7 @@ struct DayflowProOnboardingSignInPanel: View {
 
   private var dayflowProRewardActiveForm: some View {
     VStack(alignment: .center, spacing: scaled(16)) {
-      ReferralPassCard(message: "Your free month of Dayflow Pro is ready.")
+      ReferralPassCard(message: String(localized: "Your free month of Dayflow Pro is ready."))
 
       VStack(spacing: scaled(6)) {
         Text("Congrats, enjoy a free month of Dayflow Pro on us!")
@@ -274,7 +278,7 @@ struct DayflowProOnboardingSignInPanel: View {
       }
 
       dayflowProPrimaryButton(
-        title: "Continue with Dayflow Pro",
+        title: String(localized: "Continue with Dayflow Pro"),
         enabled: !authManager.isBusy,
         action: continueWithDayflowPro
       )
@@ -284,7 +288,7 @@ struct DayflowProOnboardingSignInPanel: View {
 
   private var dayflowProTrialOfferForm: some View {
     VStack(alignment: .center, spacing: scaled(16)) {
-      ReferralPassCard(message: "7 days free. No credit card required.")
+      ReferralPassCard(message: String(localized: "7 days free. No credit card required."))
 
       VStack(spacing: scaled(6)) {
         Text("Try Dayflow Pro free for 7 days.")
@@ -303,13 +307,14 @@ struct DayflowProOnboardingSignInPanel: View {
 
       HStack(spacing: scaled(10)) {
         dayflowProPrimaryButton(
-          title: authManager.isBusy ? "Starting..." : "Start free trial",
+          title: authManager.isBusy
+            ? String(localized: "Starting...") : String(localized: "Start free trial"),
           enabled: !authManager.isBusy,
           action: startDayflowProTrial
         )
 
         dayflowProSecondaryButton(
-          title: "I have a code",
+          title: String(localized: "I have a code"),
           enabled: !authManager.isBusy,
           action: showDayflowProReferralCodeStep
         )
@@ -320,7 +325,7 @@ struct DayflowProOnboardingSignInPanel: View {
 
   private var dayflowProTrialActiveForm: some View {
     VStack(alignment: .center, spacing: scaled(16)) {
-      ReferralPassCard(message: "7 days free. No credit card required.")
+      ReferralPassCard(message: String(localized: "7 days free. No credit card required."))
 
       VStack(spacing: scaled(6)) {
         Text("Your Dayflow Pro trial is active.")
@@ -336,7 +341,7 @@ struct DayflowProOnboardingSignInPanel: View {
       }
 
       dayflowProPrimaryButton(
-        title: "Continue with Dayflow Pro",
+        title: String(localized: "Continue with Dayflow Pro"),
         enabled: !authManager.isBusy,
         action: continueWithDayflowPro
       )
@@ -385,15 +390,15 @@ struct DayflowProOnboardingSignInPanel: View {
     case .email:
       return nil
     case .code:
-      return "Enter the code we sent to finish signing up/in."
+      return String(localized: "Enter the code we sent to finish signing up/in.")
     case .referralCode:
       return nil
     case .freeMonthActive:
-      return "Your referral reward is ready."
+      return String(localized: "Your referral reward is ready.")
     case .trialOffer:
-      return "No referral code? Start with a free trial."
+      return String(localized: "No referral code? Start with a free trial.")
     case .trialActive:
-      return "Your trial is ready."
+      return String(localized: "Your trial is ready.")
     }
   }
 
@@ -404,10 +409,13 @@ struct DayflowProOnboardingSignInPanel: View {
 
     let status = authManager.statusText.trimmingCharacters(in: .whitespacesAndNewlines)
     let normalizedStatus = status.lowercased()
-    guard !status.isEmpty, !normalizedStatus.hasPrefix("signed out") else {
+    guard !status.isEmpty, !normalizedStatus.hasPrefix(String(localized: "Signed out").lowercased())
+    else {
       return nil
     }
-    if shouldHideSignedInStatus, normalizedStatus.hasPrefix("signed in") {
+    if shouldHideSignedInStatus,
+      normalizedStatus.hasPrefix(String(localized: "Signed in.").lowercased())
+    {
       return nil
     }
 
