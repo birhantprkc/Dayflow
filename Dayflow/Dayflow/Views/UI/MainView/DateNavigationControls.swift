@@ -90,7 +90,7 @@ struct DateNavigationControls: View {
     let timelineToday = timelineDisplayDate(from: now, now: now)
 
     if calendar.isDate(displayDate, inSameDayAs: timelineToday) {
-      return cachedTodayDisplayFormatter.string(from: displayDate)
+      return String(localized: "Today, \(cachedTodayDisplayFormatter.string(from: displayDate))")
     } else {
       return cachedOtherDayDisplayFormatter.string(from: displayDate)
     }
