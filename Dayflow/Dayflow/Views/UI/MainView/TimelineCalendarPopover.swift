@@ -47,7 +47,7 @@ struct TimelineCalendarPopover: View {
 
   private static let monthYearFormatter: DateFormatter = {
     let f = DateFormatter()
-    f.dateFormat = "MMMM yyyy"
+    f.setLocalizedDateFormatFromTemplate("yMMMM")
     return f
   }()
 
@@ -279,7 +279,7 @@ struct TimelineCalendarPopover: View {
           days.append(
             CalendarDay(
               date: date,
-              label: "\(calendar.component(.day, from: date))",
+              label: String(localized: "\(calendar.component(.day, from: date))"),
               isCurrentMonth: false
             )
           )
@@ -293,7 +293,7 @@ struct TimelineCalendarPopover: View {
         days.append(
           CalendarDay(
             date: date,
-            label: "\(calendar.component(.day, from: date))",
+            label: String(localized: "\(calendar.component(.day, from: date))"),
             isCurrentMonth: true
           )
         )
@@ -310,7 +310,7 @@ struct TimelineCalendarPopover: View {
           days.append(
             CalendarDay(
               date: date,
-              label: "\(calendar.component(.day, from: date))",
+              label: String(localized: "\(calendar.component(.day, from: date))"),
               isCurrentMonth: false
             )
           )
