@@ -26,9 +26,9 @@ final class RetryCoordinator: ObservableObject {
     case .running(let step):
       return "Status: Reprocessing - Step: \(stepLabel(step))\(dots)"
     case .failed:
-      return "Status: Failed - retry stopped"
+      return String(localized: "Status: Failed - retry stopped")
     case .stopped:
-      return "Status: Stopped - earlier batch failed"
+      return String(localized: "Status: Stopped - earlier batch failed")
     case .done:
       return nil
     }
@@ -49,7 +49,7 @@ final class RetryCoordinator: ObservableObject {
     guard !groupStatuses.isEmpty else { return nil }
 
     if groupStatuses.contains(.failed) {
-      return "Status: Failed - retry stopped"
+      return String(localized: "Status: Failed - retry stopped")
     }
 
     let queued = groupStatuses.compactMap { status -> (position: Int, total: Int)? in
@@ -67,7 +67,7 @@ final class RetryCoordinator: ObservableObject {
     }
 
     if groupStatuses.contains(.stopped) {
-      return "Status: Stopped - earlier batch failed"
+      return String(localized: "Status: Stopped - earlier batch failed")
     }
 
     return nil
@@ -208,9 +208,9 @@ final class RetryCoordinator: ObservableObject {
   private func stepLabel(_ step: LLMProcessingStep) -> String {
     switch step {
     case .transcribing:
-      return "1/2 Transcribing"
+      return String(localized: "1/2 Transcribing")
     case .generatingCards:
-      return "2/2 Generating cards"
+      return String(localized: "2/2 Generating cards")
     }
   }
 }
