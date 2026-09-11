@@ -14,7 +14,7 @@ import QuartzCore
 final class ScreenshotSlideshowPlaybackTimelineState: ObservableObject {
   @Published var currentTime: Double = 0
   @Published var duration: Double = 1
-  @Published var speedLabel: String = "20x"
+  @Published var speedLabel: String = String(localized: "20x")
   @Published var isPlaying: Bool = true
 }
 
