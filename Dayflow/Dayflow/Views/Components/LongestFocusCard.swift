@@ -11,7 +11,8 @@ import SwiftUI
 
 private let cachedFocusTimeFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "h:mm a"
+  formatter.timeStyle = .short
+  formatter.dateStyle = .none
   return formatter
 }()
 
@@ -91,18 +92,7 @@ struct LongestFocusCard: View {
   }
 
   private var formattedDuration: String {
-    guard let longest = longestBlock else { return "0 minutes" }
-    let totalMinutes = Int(longest.duration / 60)
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-
-    if hours > 0 && minutes > 0 {
-      return "\(hours) hours \(minutes) minutes"
-    } else if hours > 0 {
-      return "\(hours) hours"
-    } else {
-      return "\(minutes) minutes"
-    }
+    LocalizedDuration.string(longestBlock?.duration ?? 0)
   }
 
   private var anchoredRange: (start: Date, end: Date)? {
