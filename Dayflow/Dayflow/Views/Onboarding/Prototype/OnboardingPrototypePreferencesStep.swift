@@ -25,7 +25,7 @@ struct OnboardingPrototypePreferencesStep: View {
             Button {
               onContinue(option == "Yes")
             } label: {
-              Text(option)
+              Text(option == "Yes" ? String(localized: "Yes") : String(localized: "No"))
                 .font(.custom("Figtree", size: 16))
                 .foregroundColor(Color(hex: "492304"))
                 .padding(.horizontal, 20)
