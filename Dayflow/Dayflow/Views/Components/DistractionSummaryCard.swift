@@ -20,7 +20,7 @@ struct DistractionSummaryCard: View {
     totalCaptured: String,
     totalDistracted: String,
     distractedRatio: Double,
-    patternTitle: String = "Main distraction pattern",
+    patternTitle: String = String(localized: "Main distraction pattern"),
     patternDescription: String
   ) {
     self.totalCaptured = totalCaptured
@@ -107,13 +107,13 @@ struct DistractionSummaryCard: View {
   private var statsBlock: some View {
     VStack(alignment: .leading, spacing: Design.statsSpacing) {
       statText(
-        title: "Total time captured",
+        title: String(localized: "Total time captured"),
         value: totalCaptured,
         color: theme.textMuted
       )
 
       statText(
-        title: "Total time distracted",
+        title: String(localized: "Total time distracted"),
         value: totalDistracted,
         color: Design.distractedTextColor
       )
