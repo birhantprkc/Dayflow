@@ -1,0 +1,150 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dayflow"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "NSAppleEventsUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow verwendet Automation, um deine Agentensitzungen im Terminal in den Vordergrund zu holen oder erneut zu öffnen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dayflow uses Automation to focus or reopen your agent sessions in the terminal."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow utilise l’automatisation pour afficher ou rouvrir vos sessions d’agents dans le terminal."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflowはオートメーションを使用して、ターミナルのエージェントセッションを前面に表示したり、開き直したりします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow는 자동화 권한을 사용해 터미널에서 에이전트 세션으로 이동하거나 다시 엽니다."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow использует автоматизацию, чтобы переключаться на сеансы агентов в терминале или открывать их заново."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow 使用自动化权限在终端中聚焦或重新打开你的智能体会话。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow 使用自動化權限，在終端機中切換至或重新開啟你的代理程式工作階段。"
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright" : {
+      "comment" : "Copyright (human-readable)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ""
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Privacy - Microphone Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dayflow listens while you talk to Flow about your plan. Audio is only used for that conversation."
+          }
+        }
+      }
+    },
+    "NSScreenCaptureUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow verwendet den Bildschirmzugriff, um deine Zeitleiste zu erstellen. Aufnahmen bleiben auf deinem Mac. Du kannst die Aufnahme jederzeit pausieren oder Aufnahmen löschen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dayflow uses screen access to create your timeline. Recordings stay on your Mac and you can pause or delete them anytime."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow utilise l’accès à l’écran pour créer votre chronologie. Les enregistrements restent sur votre Mac ; vous pouvez les mettre en pause ou les supprimer à tout moment."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflowは画面へのアクセスを使用してタイムラインを作成します。録画はMac上に保存され、いつでも一時停止や削除ができます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow는 화면 접근 권한으로 타임라인을 만듭니다. 녹화 내용은 Mac에 저장되며 언제든지 일시 정지하거나 삭제할 수 있습니다."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow использует доступ к экрану для создания вашей хронологии. Записи остаются на вашем Mac. Вы можете в любой момент приостановить запись или удалить записи."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow 使用屏幕访问权限创建你的时间线。录制内容保留在你的 Mac 上，你可以随时暂停或删除。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dayflow 使用螢幕存取權限建立你的時間軸。錄製內容會保留在你的 Mac 上，你可以隨時暫停或刪除。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
