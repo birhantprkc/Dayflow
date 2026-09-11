@@ -45,8 +45,11 @@ final class FlowDistractionAgent: ObservableObject {
     let action: String?
     let message: String?
     let reason: String?
-    /// What the user is doing right now, a few words, for the session timeline.
-    let activity: String?
+  }
+
+  /// The optional second object in a reply: the model's revised timeline.
+  private struct TimelineReply: Decodable {
+    let timeline: [FlowSessionTimeline.ModelItem]?
   }
 
   private let runner = ChatCLIProcessRunner()
@@ -74,10 +77,9 @@ final class FlowDistractionAgent: ObservableObject {
   private var lastSnapshot: FlowNativeSnapshot?
   /// Number of re-briefs this session, so a broken Codex install can't loop.
   private var rebriefs = 0
-  /// Callers waiting for the in-flight tick to land (the summary screen wants
-  /// the timeline as fresh as possible when the session ends).
-  private var settleWaiters: [CheckedContinuation<Void, Never>] = []
   private var timeline: FlowSessionTimeline { FlowSessionTimeline.shared }
+  /// Debug panel: make the next tick ask for a timeline update.
+  private var forceTimelineUpdate = false
 
   /// Model, reasoning, cadence, prompt… all live in FlowAgentSettings so the
   /// debug panel can change them while a session runs.
@@ -225,7 +227,6 @@ final class FlowDistractionAgent: ObservableObject {
     tickTimer?.invalidate()
     tickTimer = nil
     tickInFlight = false
-    resumeSettleWaiters()
     codexSessionId = nil
     paused = false
     pendingNotes = []
@@ -265,23 +266,10 @@ final class FlowDistractionAgent: ObservableObject {
     transcript = []
   }
 
-  /// Waits for the tick that's in flight (if any) to finish, so a caller
-  /// reading the timeline gets the freshest possible read. Never waits past
-  /// `timeout` seconds.
-  func settle(timeout: TimeInterval = 20) async {
-    guard tickInFlight else { return }
-    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-      settleWaiters.append(continuation)
-      DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
-        self?.resumeSettleWaiters()
-      }
-    }
-  }
-
-  private func resumeSettleWaiters() {
-    let waiters = settleWaiters
-    settleWaiters = []
-    waiters.forEach { $0.resume() }
+  /// Debug panel: tick right now and ask for the timeline in the same turn.
+  func requestTimelineNow() {
+    forceTimelineUpdate = true
+    tickNow()
   }
 
   /// The briefing exactly as it would be sent now (for the debug panel).
@@ -315,7 +303,10 @@ final class FlowDistractionAgent: ObservableObject {
 
     tickInFlight = true
     let gen = generation
-    let message = tickMessage()
+    let askTimeline =
+      forceTimelineUpdate || timeline.wantsUpdate(every: settings.timelineEverySeconds)
+    forceTimelineUpdate = false
+    let message = tickMessage(askTimeline: askTimeline)
     pendingNotes = []
     let runner = self.runner
     let shotURL = directory.appendingPathComponent("shot-\(Int(Date().timeIntervalSince1970)).jpg")
@@ -377,13 +368,12 @@ final class FlowDistractionAgent: ObservableObject {
 
   private func finishTick(
     generation gen: Int, reply: String?, error: String?, seconds: Double,
-    front: (bundleId: String?, iconURL: String?)
+    front: FlowSessionTimeline.FrontApp
   ) {
     guard gen == generation else { return }
     tickInFlight = false
     lastTickAt = Date()
     lastTickSeconds = seconds
-    defer { resumeSettleWaiters() }
 
     guard let reply else {
       consecutiveFailures += 1
@@ -413,21 +403,29 @@ final class FlowDistractionAgent: ObservableObject {
     consecutiveFailures = 0
     appendTranscript(reply)
 
-    guard let verdict = Self.parseVerdict(from: reply) else {
+    let objects = Self.jsonObjects(in: reply)
+    guard let first = objects.first,
+      let verdict = try? JSONDecoder().decode(Verdict.self, from: Data(first.utf8))
+    else {
       print("[FlowAgent] Unparseable reply, treating as on-task: \(reply.prefix(200))")
-      timeline.extendOpenEntry()
       return
     }
-    handle(verdict: verdict, front: front)
+    // The verdict comes first and is acted on first; the timeline (when the
+    // tick asked for one) rides behind it in a second object.
+    handle(verdict: verdict)
+    timeline.observe(offTask: verdict.status == "off_task", front: front, reason: verdict.reason)
+    for object in objects.dropFirst() {
+      if let parsed = try? JSONDecoder().decode(TimelineReply.self, from: Data(object.utf8)),
+        let items = parsed.timeline
+      {
+        timeline.apply(modelItems: items)
+        break
+      }
+    }
   }
 
-  private func handle(verdict: Verdict, front: (bundleId: String?, iconURL: String?)) {
+  private func handle(verdict: Verdict) {
     let offTask = verdict.status == "off_task"
-    if !paused {
-      timeline.record(
-        title: verdict.activity ?? "", kind: offTask ? .distracted : .focused,
-        bundleId: front.bundleId, iconURL: front.iconURL)
-    }
     if offTask != lastReportedOffTask {
       lastReportedOffTask = offTask
       FlowSessionMirror.shared.agentReportedFocusChange(isDistracted: offTask)
@@ -571,14 +569,8 @@ final class FlowDistractionAgent: ObservableObject {
     HOW TO REPLY
     Reply to every message with exactly one JSON object and nothing else — no prose, no \
     code fences, no explanation:
-    {"status": "on_task" | "off_task", "action": "none" | "nudge" | "praise", "message": "...", "reason": "...", "activity": "..."}
+    {"status": "on_task" | "off_task", "action": "none" | "nudge" | "praise", "message": "...", "reason": "..."}
     - status: your read of the current check.
-    - activity: REQUIRED on every turn. What the user is doing right now, in 3–7 words, \
-    written like a timeline entry: "Address feedback on PR", "Scrolling on X", "Watching \
-    YouTube", "Reviewing checkout flow mockups in Figma". Name the concrete work or the \
-    site, not the app category. If they're still doing what they did on your previous \
-    turn, repeat your previous wording EXACTLY so consecutive checks merge into one \
-    timeline entry; change it only when they've genuinely moved on to something else.
     - action "nudge" makes the creature appear with your message. Write it yourself in \
     the alert style's tone, but keep it SHORT: one sentence, 10 words max — it renders \
     in a tiny speech bubble ("Twitter can wait — 12 minutes left!").
@@ -591,13 +583,28 @@ final class FlowDistractionAgent: ObservableObject {
     ALERT STYLE
     {{style_rules}}
 
+    THE SESSION TIMELINE
+    About once a minute a message will end with "TIMELINE UPDATE". On those turns, after \
+    the verdict object, add a SECOND JSON object on its own line:
+    {"timeline": [{"start": "HH:mm", "end": "HH:mm", "kind": "focused" | "distracted" | "break", "title": "..."}, ...]}
+    This is the user's session log as they'll see it afterwards, so write it like Dayflow's \
+    timeline: the WHOLE session from its start to now, revised each time, not a list of \
+    checks. Fold in what you've seen since the last update, and condense with hindsight — \
+    merge a stretch of work on one thing into a single entry even if they bounced between \
+    docs, terminal, and editor for it; rename earlier entries once you understand what they \
+    were really doing. But keep genuine splits: a detour to X or YouTube (kind \
+    "distracted"), even a one-minute one, and every break stay as their own entries. \
+    Entries must be contiguous (each starts where the previous ended, 24h HH:mm), the \
+    first starting at the session start. Titles are concrete, 3–7 words, like "Address \
+    feedback on PR", "Scrolling on X", "Reviewing checkout flow mockups in Figma". You'll \
+    be given your previous timeline and the exact check log to revise from.
+
     Don't overthink the ticks: no analysis, no chain of reasoning in your reply. Most \
-    turns the correct answer is {"status":"on_task","action":"none","activity":"..."} with \
-    just the activity filled in. Acknowledge this briefing now with \
-    {"status":"on_task","action":"none","activity":"Starting the session"}.
+    turns the correct answer is exactly {"status":"on_task","action":"none"}. Acknowledge \
+    this briefing now with that same JSON object.
     """
 
-  private func tickMessage() -> String {
+  private func tickMessage(askTimeline: Bool) -> String {
     let timeFormatter = DateFormatter()
     timeFormatter.dateFormat = "h:mm a"
     let now = Date()
@@ -613,6 +620,19 @@ final class FlowDistractionAgent: ObservableObject {
 
     var parts = [line]
     parts.append(contentsOf: pendingNotes)
+    if askTimeline {
+      let since = timeline.lastModelUpdateAt
+      parts.append(
+        """
+        TIMELINE UPDATE — after the verdict object, add the {"timeline": [...]} object covering \
+        the whole session (started \(FlowSessionTimeline.clock(sessionStartedAt))) up to now.
+        Your previous timeline:
+        \(timeline.promptTimelineJSON())
+        Check log since then (time · verdict · frontmost app · reason):
+        \(timeline.promptObservations(since: since))
+        Breaks (exact, from the app): \(timeline.promptBreaks())
+        """)
+    }
     // The evidence line (screenshot vs OCR text) is appended in tick(), where
     // the capture happens.
     return parts.joined(separator: "\n")
@@ -633,20 +653,42 @@ final class FlowDistractionAgent: ObservableObject {
 
   // MARK: - Verdict parsing
 
-  private static func parseVerdict(from reply: String) -> Verdict? {
-    let trimmed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
-    if let data = trimmed.data(using: .utf8),
-      let verdict = try? JSONDecoder().decode(Verdict.self, from: data)
-    {
-      return verdict
+  /// Every top-level {...} in the reply, in order, tolerating fences and
+  /// stray prose around them. Strings are skipped so braces inside a title
+  /// don't confuse the depth count.
+  private static func jsonObjects(in reply: String) -> [String] {
+    var objects: [String] = []
+    var depth = 0
+    var start: String.Index?
+    var inString = false
+    var escaped = false
+    var index = reply.startIndex
+    while index < reply.endIndex {
+      let character = reply[index]
+      if inString {
+        if escaped {
+          escaped = false
+        } else if character == "\\" {
+          escaped = true
+        } else if character == "\"" {
+          inString = false
+        }
+      } else if character == "\"" {
+        inString = true
+      } else if character == "{" {
+        if depth == 0 { start = index }
+        depth += 1
+      } else if character == "}" {
+        depth -= 1
+        if depth == 0, let begin = start {
+          objects.append(String(reply[begin...index]))
+          start = nil
+        }
+        if depth < 0 { depth = 0 }
+      }
+      index = reply.index(after: index)
     }
-    // Fall back to the outermost {...} in case the model wrapped the JSON in
-    // fences or stray text.
-    guard let start = trimmed.firstIndex(of: "{"), let end = trimmed.lastIndex(of: "}"),
-      start < end,
-      let data = String(trimmed[start...end]).data(using: .utf8)
-    else { return nil }
-    return try? JSONDecoder().decode(Verdict.self, from: data)
+    return objects
   }
 
   // MARK: - Screenshot capture

@@ -133,20 +133,17 @@ struct FlowWebView: NSViewRepresentable {
         reply(id: id, payload: [:])
 
       case "getTimeline":
-        // The session summary wants the agent's activity timeline. Let a
-        // tick that's mid-flight land first so the read is as fresh as the
-        // last screenshot, then hand over the file's contents.
-        Task { @MainActor in
-          await FlowDistractionAgent.shared.settle()
-          let timeline = FlowSessionTimeline.shared
-          timeline.finish()
-          self.reply(
-            id: id,
-            payload: [
-              "activities": timeline.bridgePayload,
-              "file": timeline.fileURL.path,
-            ])
-        }
+        // The session summary wants the agent's activity timeline: hand over
+        // whatever the last update produced, right away (no model turn, no
+        // waiting on an in-flight tick).
+        let timeline = FlowSessionTimeline.shared
+        timeline.finish()
+        reply(
+          id: id,
+          payload: [
+            "activities": timeline.bridgePayload,
+            "file": timeline.fileURL.path,
+          ])
 
       case "openExternal":
         if let urlString = payload["url"] as? String, let url = URL(string: urlString),

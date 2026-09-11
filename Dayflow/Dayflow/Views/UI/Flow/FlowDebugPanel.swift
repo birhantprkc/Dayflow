@@ -161,6 +161,9 @@ struct FlowDebugPanel: View {
         }
         slider(
           "Every \(Int(settings.tickSeconds))s", value: $settings.tickSeconds, in: 5...120, step: 5)
+        slider(
+          "Timeline every \(Int(settings.timelineEverySeconds))s",
+          value: $settings.timelineEverySeconds, in: 15...300, step: 15)
         row("Screenshot") {
           Picker("", selection: $settings.screenshotHeight) {
             ForEach(FlowAgentSettings.screenshotHeights, id: \.self) { Text("\($0)p") }
@@ -339,6 +342,7 @@ struct FlowDebugPanel: View {
             .font(.system(size: 9, design: .monospaced))
             .foregroundColor(.white.opacity(0.6))
         }
+        smallButton("Update now") { agent.requestTimelineNow() }
         smallButton("Reveal") {
           NSWorkspace.shared.activateFileViewerSelecting([timeline.fileURL])
         }
@@ -346,9 +350,14 @@ struct FlowDebugPanel: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 4) {
           if timeline.entries.isEmpty {
-            Text("No activity logged yet. Entries appear after the first tick of a session.")
-              .font(.system(size: 11))
-              .foregroundColor(.white.opacity(0.6))
+            Text(
+              verbatim:
+                "No timeline yet. The model writes one about every "
+                + "\(Int(settings.timelineEverySeconds))s of a session "
+                + "(\(timeline.observations.count) checks logged so far)."
+            )
+            .font(.system(size: 11))
+            .foregroundColor(.white.opacity(0.6))
           }
           ForEach(timeline.entries) { entry in
             HStack(alignment: .top, spacing: 8) {

@@ -43,6 +43,10 @@ final class FlowAgentSettings: ObservableObject {
   @Published var briefingTemplate: String { didSet { set(briefingTemplate, "flowAgentBriefing") } }
   /// Appended to whichever briefing is used, for quick experiments.
   @Published var extraInstructions: String { didSet { set(extraInstructions, "flowAgentExtra") } }
+  /// How often a tick also asks the model to revise the session timeline.
+  @Published var timelineEverySeconds: Double {
+    didSet { set(timelineEverySeconds, "flowAgentTimelineSeconds") }
+  }
 
   // MARK: Overlay
 
@@ -85,6 +89,8 @@ final class FlowAgentSettings: ObservableObject {
     tickTimeoutSeconds = timeout >= 10 ? timeout : 60
     briefingTemplate = d.string(forKey: "flowAgentBriefing") ?? ""
     extraInstructions = d.string(forKey: "flowAgentExtra") ?? ""
+    let timelineSeconds = d.double(forKey: "flowAgentTimelineSeconds")
+    timelineEverySeconds = timelineSeconds >= 15 ? timelineSeconds : 60
     let breakSeconds = d.double(forKey: "flowBreakOverlaySeconds")
     breakOverlaySeconds = breakSeconds > 0 ? breakSeconds : 8
     let toast = d.double(forKey: "flowToastSeconds")
@@ -137,6 +143,7 @@ final class FlowAgentSettings: ObservableObject {
     tickTimeoutSeconds = 60
     briefingTemplate = ""
     extraInstructions = ""
+    timelineEverySeconds = 60
     breakOverlaySeconds = 8
     toastSeconds = 4
     praiseSeconds = 5
