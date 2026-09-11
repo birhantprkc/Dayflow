@@ -14,21 +14,21 @@ enum GeminiModel: String, Codable, CaseIterable {
 
   var displayName: String {
     switch self {
-    case .flash38: return "Gemini 3.8 Flash"
-    case .flash37: return "Gemini 3.7 Flash"
-    case .flash36: return "Gemini 3.6 Flash"
-    case .flash35: return "Gemini 3.5 Flash"
-    case .flashLite35: return "Gemini 3.5 Flash-Lite"
+    case .flash38: return String(localized: "Gemini 3.8 Flash")
+    case .flash37: return String(localized: "Gemini 3.7 Flash")
+    case .flash36: return String(localized: "Gemini 3.6 Flash")
+    case .flash35: return String(localized: "Gemini 3.5 Flash")
+    case .flashLite35: return String(localized: "Gemini 3.5 Flash-Lite")
     }
   }
 
   var shortLabel: String {
     switch self {
-    case .flash38: return "3.8 Flash"
-    case .flash37: return "3.7 Flash"
-    case .flash36: return "3.6 Flash"
-    case .flash35: return "3.5 Flash"
-    case .flashLite35: return "3.5 Flash-Lite"
+    case .flash38: return String(localized: "3.8 Flash")
+    case .flash37: return String(localized: "3.7 Flash")
+    case .flash36: return String(localized: "3.6 Flash")
+    case .flash35: return String(localized: "3.5 Flash")
+    case .flashLite35: return String(localized: "3.5 Flash-Lite")
     }
   }
 }
