@@ -39,7 +39,7 @@ struct ActivityCard: View {
 
   private let timeFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateFormat = "h:mm a"
+    formatter.timeStyle = .short
     return formatter
   }()
 
@@ -244,7 +244,7 @@ struct ActivityCard: View {
                     }
                   },
                   diameter: 24,
-                  accessibilityLabel: "Change category"
+                  accessibilityLabel: String(localized: "Change category")
                 )
               }
             }
@@ -330,7 +330,7 @@ struct ActivityCard: View {
         }
     } else {
       HStack(alignment: .center, spacing: 6) {
-        Text(activity.title)
+        Text(isFailedCard(activity) ? String(localized: "Processing failed") : activity.title)
           .font(
             Font.custom("Figtree", size: 16)
               .weight(.semibold)
@@ -342,7 +342,7 @@ struct ActivityCard: View {
           CategoryEditCircleButton(
             action: { startTitleEdit(for: activity) },
             diameter: 24,
-            accessibilityLabel: "Edit title"
+            accessibilityLabel: String(localized: "Edit title")
           )
         }
       }
@@ -596,7 +596,7 @@ struct ActivityCard: View {
         .contentShape(Rectangle())
         .onTapGesture {
           guard let cardId = activity.recordId else {
-            slideshowError = "This activity cannot load a slideshow."
+            slideshowError = String(localized: "This activity cannot load a slideshow.")
             return
           }
           openSlideshow(for: activity, cardId: cardId)
@@ -710,9 +710,9 @@ private enum ActivityCardTimelapseError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .timelineCardMissing:
-      return "Could not find this activity in storage."
+      return String(localized: "Could not find this activity in storage.")
     case .noScreenshots:
-      return "No screenshots are available for this activity range."
+      return String(localized: "No screenshots are available for this activity range.")
     }
   }
 }
