@@ -231,6 +231,20 @@ struct FlowWebView: NSViewRepresentable {
       return nil
     }
 
+    // "Add more to my plan" talks to Flow over the microphone. Grant the
+    // Flow origin's capture request straight through; the system's own
+    // microphone consent (NSMicrophoneUsageDescription) still applies.
+    nonisolated func webView(
+      _ webView: WKWebView,
+      requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+      initiatedByFrame frame: WKFrameInfo,
+      type: WKMediaCaptureType,
+      decisionHandler: @escaping (WKPermissionDecision) -> Void
+    ) {
+      let allowed = type == .microphone && origin.host == FlowWebConfiguration.url.host
+      decisionHandler(allowed ? .grant : .deny)
+    }
+
     nonisolated func webView(
       _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!,
       withError error: Error
