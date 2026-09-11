@@ -173,15 +173,16 @@ enum ClaudeTranscriptionInputBuilderError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .noScreenshots:
-      return "No screenshots were supplied for Claude transcription."
+      return String(localized: "No screenshots were supplied for Claude transcription.")
     case .missingImage(let path):
-      return "A selected screenshot does not exist at \(path)."
+      return String(localized: "A selected screenshot does not exist at \(path).")
     case .cannotLoadImage(let path):
-      return "A selected screenshot could not be decoded at \(path)."
+      return String(localized: "A selected screenshot could not be decoded at \(path).")
     case .cannotCreateContactSheet:
-      return "The Claude transcription contact sheet could not be created."
+      return String(localized: "The Claude transcription contact sheet could not be created.")
     case .cannotEncodeContactSheet:
-      return "The Claude transcription contact sheet could not be encoded as JPEG."
+      return String(
+        localized: "The Claude transcription contact sheet could not be encoded as JPEG.")
     }
   }
 }
