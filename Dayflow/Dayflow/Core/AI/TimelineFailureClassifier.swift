@@ -194,11 +194,11 @@ struct TimelineFailureClassification {
   /// "chatgpt", "local"); map them to names fit for user-facing copy.
   private func displayName(forProviderLabel label: String?) -> String? {
     switch label?.lowercased() {
-    case "gemini": return "Gemini"
-    case "chatgpt": return "ChatGPT"
-    case "claude": return "Claude"
-    case "local", "ollama": return "Ollama/LM Studio"
-    case "dayflow": return "Dayflow"
+    case "gemini": return String(localized: "Gemini")
+    case "chatgpt": return String(localized: "ChatGPT")
+    case "claude": return String(localized: "Claude")
+    case "local", "ollama": return String(localized: "Ollama/LM Studio")
+    case "dayflow": return String(localized: "Dayflow")
     default: return label
     }
   }
