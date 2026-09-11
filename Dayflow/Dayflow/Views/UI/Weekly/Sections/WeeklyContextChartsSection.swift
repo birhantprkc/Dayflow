@@ -50,13 +50,13 @@ struct WeeklyContextChartsSection: View {
     [
       WeeklyContextLineSeries(
         id: "distractions",
-        label: "Number of times distracted",
+        label: String(localized: "Number of times distracted"),
         colorHex: "FF8A8A",
         values: snapshot.comparison.days.map(\.distracted)
       ),
       WeeklyContextLineSeries(
         id: "context-shifts",
-        label: "Number of context shifts",
+        label: String(localized: "Number of context shifts"),
         colorHex: "A78CFF",
         values: snapshot.comparison.days.map(\.shifts)
       ),
@@ -238,8 +238,11 @@ private struct WeeklyContextDistributionCard: View {
     max(Design.plotWidth, width - 124)
   }
 
+  /// Hour ticks from 6 PM down to 10 AM, formatted for the current locale.
   private var hourTicks: [String] {
-    ["6pm", "5pm", "4pm", "3pm", "2pm", "1pm", "12pm", "11am", "10am"]
+    stride(from: 18, through: 10, by: -1).map { hour in
+      WeeklyDashboardBuilder.hourAxisLabel(minuteOfDay: Double(hour * 60))
+    }
   }
 
   var body: some View {
@@ -251,7 +254,7 @@ private struct WeeklyContextDistributionCard: View {
         .padding(.top, 18)
 
       HStack(spacing: 24) {
-        legendItem("Context shift", color: Design.contextColor)
+        legendItem(String(localized: "Context shift"), color: Design.contextColor)
         legendItem("Distraction", color: Design.distractionColor)
       }
       .frame(maxWidth: .infinity)
@@ -467,8 +470,12 @@ private struct WeeklyContextComparisonBarCard: View {
 
   private var legend: some View {
     HStack(spacing: 24) {
-      legendItem("Number of times distracted", color: Color(hex: "FF653B"))
-      legendItem("Number of context shifts", color: Color(hex: "A88CFF"))
+      legendItem(
+        String(localized: "Number of times distracted"),
+        color: Color(hex: String(localized: "FF653B")))
+      legendItem(
+        String(localized: "Number of context shifts"),
+        color: Color(hex: String(localized: "A88CFF")))
     }
   }
 
@@ -581,7 +588,8 @@ struct WeeklyContextComparisonSnapshot {
       .init(day: "Sun", distracted: 6, shifts: 8),
     ],
     insight:
-      "Tue had the most interruptions, with 22 context shifts and 53 distractions."
+      String(
+        localized: "Tue had the most interruptions, with 22 context shifts and 53 distractions.")
   )
 }
 
