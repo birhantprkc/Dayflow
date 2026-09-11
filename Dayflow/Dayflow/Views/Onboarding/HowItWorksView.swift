@@ -13,7 +13,7 @@ struct HowItWorksView: View {
   @State private var cardOpacities: [Double] = [0, 0, 0]
   @State private var buttonsOpacity: Double = 0
 
-  private let fullText = "How Dayflow Works"
+  private let fullText = String(localized: "How Dayflow Works")
 
   // Navigation callbacks
   var onBack: () -> Void
@@ -22,18 +22,27 @@ struct HowItWorksView: View {
   private let cards: [(icon: String, title: String, body: String)] = [
     (
       "OnboardingHow",
-      "Install and Forget",
-      "Dayflow takes periodic screen captures to understand what you're working on, all stored privately on your device. You can toggle this whenever you like."
+      String(localized: "Install and Forget"),
+      String(
+        localized:
+          "Dayflow takes periodic screen captures to understand what you're working on, all stored privately on your device. You can toggle this whenever you like."
+      )
     ),
     (
       "OnboardingSecurity",
-      "Privacy by Default",
-      "Dayflow can run entirely on local AI models, which means your data never leaves your computer. You can also find the source code below - please consider giving it a star on Github!"
+      String(localized: "Privacy by Default"),
+      String(
+        localized:
+          "Dayflow can run entirely on local AI models, which means your data never leaves your computer. You can also find the source code below - please consider giving it a star on Github!"
+      )
     ),
     (
       "OnboardingUnderstanding",
-      "Understand your Day",
-      "Knows the difference between YouTube tutorials and YouTube rabbit holes. Dayflow actually gets what you're working on."
+      String(localized: "Understand your Day"),
+      String(
+        localized:
+          "Knows the difference between YouTube tutorials and YouTube rabbit holes. Dayflow actually gets what you're working on."
+      )
     ),
   ]
 
