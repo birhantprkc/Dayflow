@@ -50,6 +50,10 @@ final class FlowSessionMirror: ObservableObject {
 
   private var deadlineTimer: Timer?
   private var toastTimer: Timer?
+  /// The tub only stays for its intro and a couple of loops, then the creature
+  /// climbs out and the overlay clears so the break doesn't sit on the screen.
+  private var breakOverlayTimer: Timer?
+  private static let breakOverlaySeconds: TimeInterval = 13
   private var snoozeUntil: Date?
   /// Nudges shown for the current distraction incident; the second one in a
   /// row escalates the creature to the fire animation.
@@ -93,9 +97,10 @@ final class FlowSessionMirror: ObservableObject {
           "always_on": newSnapshot.alwaysOn,
         ])
     case (_, .onBreak):
-      overlay = .onBreak
+      showBreak()
       FlowDistractionAgent.shared.pause()
     case (.onBreak, .active):
+      breakOverlayTimer?.invalidate()
       showToast(String(localized: "Break's over. Back to it!"))
       FlowDistractionAgent.shared.resume()
     case (_, .idle), (_, .ended):
@@ -273,6 +278,7 @@ final class FlowSessionMirror: ObservableObject {
       snapshot.phase = .active
       snapshot.breakEndsAt = nil
       snapshot.persist()
+      breakOverlayTimer?.invalidate()
       showToast(String(localized: "Break's over. Back to it!"))
     }
 
@@ -288,8 +294,27 @@ final class FlowSessionMirror: ObservableObject {
       MainActor.assumeIsolated {
         let mirror = FlowSessionMirror.shared
         if case .toast = mirror.overlay {
-          // A break that started while the toast was up takes precedence.
-          mirror.overlay = mirror.snapshot.phase == .onBreak ? .onBreak : .hidden
+          mirror.overlay = .hidden
+        }
+      }
+    }
+  }
+
+  // MARK: - Break
+
+  /// Brings the tub out for the bath intro plus a couple of loops, then hides
+  /// the overlay again (the controller plays the climb-out clip on the way).
+  private func showBreak() {
+    toastTimer?.invalidate()
+    overlay = .onBreak
+    breakOverlayTimer?.invalidate()
+    breakOverlayTimer = Timer.scheduledTimer(
+      withTimeInterval: Self.breakOverlaySeconds, repeats: false
+    ) { _ in
+      MainActor.assumeIsolated {
+        let mirror = FlowSessionMirror.shared
+        if mirror.overlay == .onBreak {
+          mirror.overlay = .hidden
         }
       }
     }
