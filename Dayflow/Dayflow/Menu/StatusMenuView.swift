@@ -23,13 +23,16 @@ struct StatusMenuView: View {
 
       MenuDivider()
 
-      MenuRow(title: "Open Dayflow", assetImage: "DayflowLogo", action: openDayflow)
-      MenuRow(title: "Open Recordings", action: openRecordingsFolder)
-      MenuRow(title: "Check for Updates", action: checkForUpdates)
+      MenuRow(
+        title: String(localized: "Open Dayflow"), assetImage: "DayflowLogo", action: openDayflow)
+      MenuRow(title: String(localized: "Open Recordings"), action: openRecordingsFolder)
+      MenuRow(title: String(localized: "Check for Updates"), action: checkForUpdates)
 
       MenuDivider()
 
-      MenuRow(title: "Quit Completely", systemImage: "power", accent: .red, action: quitDayflow)
+      MenuRow(
+        title: String(localized: "Quit Completely"), systemImage: "power", accent: .red,
+        action: quitDayflow)
     }
     .padding(.vertical, 9)
     .padding(.horizontal, 9)
@@ -120,9 +123,9 @@ private struct DurationPicker: View {
   let onSelect: (PauseDuration) -> Void
 
   private let options: [(label: String, duration: PauseDuration)] = [
-    ("15 Min", .minutes15),
-    ("30 Min", .minutes30),
-    ("1 Hour", .hour1),
+    (String(localized: "15 Mins"), .minutes15),
+    (String(localized: "30 Mins"), .minutes30),
+    (String(localized: "1 Hour"), .hour1),
     ("∞", .indefinite),
   ]
 
@@ -201,7 +204,7 @@ private struct PausedSection: View {
 
       // Resume button
       MenuRow(
-        title: "Resume Dayflow",
+        title: String(localized: "Resume Dayflow"),
         systemImage: "play.circle",
         accent: .accentColor,
         action: onResume
@@ -216,18 +219,14 @@ private struct CountdownBadge: View {
   let remainingTime: String
 
   var body: some View {
-    HStack(spacing: 0) {
-      Text("Dayflow paused for ")
-        .font(.system(size: 11, weight: .medium))
-      Text(remainingTime)
-        .font(.system(size: 11, weight: .bold).monospacedDigit())
-    }
-    .foregroundStyle(.white)
-    .padding(.horizontal, 12)
-    .padding(.vertical, 6)
-    .frame(maxWidth: .infinity)
-    .background(Color.accentColor)
-    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    Text("Dayflow paused for \(remainingTime)")
+      .font(.system(size: 11, weight: .medium).monospacedDigit())
+      .foregroundStyle(.white)
+      .padding(.horizontal, 12)
+      .padding(.vertical, 6)
+      .frame(maxWidth: .infinity)
+      .background(Color.accentColor)
+      .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
   }
 }
 
