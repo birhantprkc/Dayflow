@@ -889,35 +889,11 @@ struct DaySummaryView: View {
   }
 
   private func formatDurationTitleCase(_ seconds: TimeInterval) -> String {
-    let totalMinutes = Int(seconds / 60)
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-
-    if hours > 0 && minutes > 0 {
-      return "\(hours) Hours \(minutes) minutes"
-    } else if hours > 0 {
-      return "\(hours) Hours"
-    } else if minutes > 0 {
-      return "\(minutes) minutes"
-    } else {
-      return "0 minutes"
-    }
+    LocalizedDuration.string(seconds)
   }
 
   private func formatDurationLowercase(_ seconds: TimeInterval) -> String {
-    let totalMinutes = Int(seconds / 60)
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-
-    if hours > 0 && minutes > 0 {
-      return "\(hours) hours \(minutes) minutes"
-    } else if hours > 0 {
-      return "\(hours) hours"
-    } else if minutes > 0 {
-      return "\(minutes) minutes"
-    } else {
-      return "0 minutes"
-    }
+    LocalizedDuration.string(seconds)
   }
 
   /// Recomputes cached stats when categories change (rename/color/system/focus/distraction flags)
