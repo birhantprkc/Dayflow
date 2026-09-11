@@ -35,12 +35,15 @@ extension ChatView {
 
   var welcomePrompts: [WelcomePrompt] {
     [
-      WelcomePrompt(icon: "doc.text", text: "Generate standup notes for yesterday"),
-      WelcomePrompt(icon: "checkmark.seal", text: "What did I get done last week?"),
       WelcomePrompt(
-        icon: "exclamationmark.bubble", text: "When was I most focused this week"),
+        icon: "doc.text", text: String(localized: "Generate standup notes for yesterday")),
       WelcomePrompt(
-        icon: "sparkles", text: "Compare this week to last week"),
+        icon: "checkmark.seal", text: String(localized: "What did I get done last week?")),
+      WelcomePrompt(
+        icon: "exclamationmark.bubble", text: String(localized: "When was I most focused this week")
+      ),
+      WelcomePrompt(
+        icon: "sparkles", text: String(localized: "Compare this week to last week")),
     ]
   }
 
@@ -97,7 +100,7 @@ extension ChatView {
   }
 
   var memoryUpdatedLabel: String {
-    guard let memoryUpdatedAt else { return "Not saved yet" }
+    guard let memoryUpdatedAt else { return String(localized: "Not saved yet") }
     return chatViewMemoryUpdatedFormatter.string(from: memoryUpdatedAt)
   }
 }
