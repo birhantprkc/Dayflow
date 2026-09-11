@@ -357,28 +357,28 @@ struct WeeklyFocusHeatmapSnapshot {
   let rows: [WeeklyFocusHeatmapRow]
 
   static let figmaPreview = WeeklyFocusHeatmapSnapshot(
-    title: "Focus and distraction heat map",
-    focusedLabel: "Focused work",
-    distractedLabel: "Distracted",
+    title: String(localized: "Focus and distraction heat map"),
+    focusedLabel: String(localized: "Focused work"),
+    distractedLabel: String(localized: "Distracted"),
     startMinute: 9.0 * 60.0,
     endMinute: 18.0 * 60.0,
     bucketMinutes: 5.0,
     timeLabels: [
-      .init(id: "9", label: "9am", minute: 9.0 * 60.0),
-      .init(id: "10", label: "10am", minute: 10.0 * 60.0),
-      .init(id: "11", label: "11am", minute: 11.0 * 60.0),
-      .init(id: "12", label: "12pm", minute: 12.0 * 60.0),
-      .init(id: "13", label: "1pm", minute: 13.0 * 60.0),
-      .init(id: "14", label: "2pm", minute: 14.0 * 60.0),
-      .init(id: "15", label: "3pm", minute: 15.0 * 60.0),
-      .init(id: "16", label: "4pm", minute: 16.0 * 60.0),
-      .init(id: "17", label: "5pm", minute: 17.0 * 60.0),
-      .init(id: "18", label: "6pm", minute: 18.0 * 60.0),
+      .init(id: "9", label: String(localized: "9am"), minute: 9.0 * 60.0),
+      .init(id: "10", label: String(localized: "10am"), minute: 10.0 * 60.0),
+      .init(id: "11", label: String(localized: "11am"), minute: 11.0 * 60.0),
+      .init(id: "12", label: String(localized: "12pm"), minute: 12.0 * 60.0),
+      .init(id: "13", label: String(localized: "1pm"), minute: 13.0 * 60.0),
+      .init(id: "14", label: String(localized: "2pm"), minute: 14.0 * 60.0),
+      .init(id: "15", label: String(localized: "3pm"), minute: 15.0 * 60.0),
+      .init(id: "16", label: String(localized: "4pm"), minute: 16.0 * 60.0),
+      .init(id: "17", label: String(localized: "5pm"), minute: 17.0 * 60.0),
+      .init(id: "18", label: String(localized: "6pm"), minute: 18.0 * 60.0),
     ],
     rows: [
       .init(
         id: "sun",
-        label: "Sun",
+        label: String(localized: "Sun"),
         values: buckets(
           runs: [
             .neutral(0..<19),
@@ -391,7 +391,7 @@ struct WeeklyFocusHeatmapSnapshot {
       ),
       .init(
         id: "mon",
-        label: "Mon",
+        label: String(localized: "Mon"),
         values: buckets(
           runs: [
             .focused(2..<11, 0.20),
@@ -407,7 +407,7 @@ struct WeeklyFocusHeatmapSnapshot {
       ),
       .init(
         id: "tue",
-        label: "Tue",
+        label: String(localized: "Tue"),
         values: buckets(
           runs: [
             .focused(0..<7, 0.12),
@@ -424,7 +424,7 @@ struct WeeklyFocusHeatmapSnapshot {
       ),
       .init(
         id: "wed",
-        label: "Wed",
+        label: String(localized: "Wed"),
         values: buckets(
           runs: [
             .focused(0..<10, 0.10),
@@ -443,7 +443,7 @@ struct WeeklyFocusHeatmapSnapshot {
       ),
       .init(
         id: "thu",
-        label: "Thu",
+        label: String(localized: "Thu"),
         values: buckets(
           runs: [
             .focused(8..<14, 0.96),
@@ -460,7 +460,7 @@ struct WeeklyFocusHeatmapSnapshot {
       ),
       .init(
         id: "fri",
-        label: "Fri",
+        label: String(localized: "Fri"),
         values: buckets(
           runs: [
             .focused(0..<5, 0.24),
@@ -481,7 +481,7 @@ struct WeeklyFocusHeatmapSnapshot {
       ),
       .init(
         id: "sat",
-        label: "Sat",
+        label: String(localized: "Sat"),
         values: buckets(
           runs: [
             .neutral(0..<6),
