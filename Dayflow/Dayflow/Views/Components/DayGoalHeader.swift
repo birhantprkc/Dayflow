@@ -112,11 +112,11 @@ struct DayGoalHeader: View {
   private var statusText: String {
     switch recordingControlMode {
     case .active:
-      return "Tracking progress from your focus and distraction categories."
+      return String(localized: "Tracking progress from your focus and distraction categories.")
     case .pausedTimed, .pausedIndefinite:
-      return "Dayflow is paused. Resume to continue tracking your progress."
+      return String(localized: "Dayflow is paused. Resume to continue tracking your progress.")
     case .stopped:
-      return "Start Dayflow to continue tracking your progress."
+      return String(localized: "Start Dayflow to continue tracking your progress.")
     }
   }
 
@@ -192,15 +192,16 @@ struct DayGoalHeader: View {
     CategoryEditCircleButton(
       action: onSetGoals,
       diameter: 20,
-      accessibilityLabel: "Edit goals"
+      accessibilityLabel: String(localized: "Edit goals")
     )
     .offset(x: 323, y: 22.25)
 
     Text(statusText)
       .font(.custom("Figtree", size: 11))
       .foregroundColor(theme.textSecondary)
-      .lineLimit(1)
-      .fixedSize()
+      .lineLimit(2)
+      .frame(width: 310, alignment: .leading)
+      .fixedSize(horizontal: false, vertical: true)
       .offset(x: 17, y: 55.68)
 
     focusLabels
@@ -433,7 +434,7 @@ struct DayGoalHeader: View {
   }
 
   private var focusSummarySuffix: String {
-    "/ \(formatCompactHours(focusTargetDuration)) hr fulfilled"
+    String(localized: "/ \(formatCompactHours(focusTargetDuration)) hr fulfilled")
   }
 
   private var distractionSummaryValue: String {
@@ -456,35 +457,15 @@ struct DayGoalHeader: View {
     if abs(hours.rounded() - hours) < 0.01 {
       return "\(Int(hours.rounded()))"
     }
-    return String(format: "%.1f", hours)
+    return hours.formatted(.number.precision(.fractionLength(1)))
   }
 
   private func formatUsedDuration(_ duration: TimeInterval) -> String {
-    let totalMinutes = Int(duration / 60)
-    if totalMinutes < 60 {
-      return "\(totalMinutes) mins"
-    }
-
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-    if minutes == 0 {
-      return hours == 1 ? "1 hour" : "\(hours) hours"
-    }
-    return "\(hours)h \(minutes)m"
+    LocalizedDuration.string(duration, style: .abbreviated)
   }
 
   private func formatLimitDuration(_ duration: TimeInterval) -> String {
-    let totalMinutes = Int(duration / 60)
-    let hours = totalMinutes / 60
-    let minutes = totalMinutes % 60
-
-    if hours > 0 && minutes == 0 {
-      return hours == 1 ? "1 hour" : "\(hours) hours"
-    }
-    if hours > 0 {
-      return "\(hours)h \(minutes)m"
-    }
-    return "\(totalMinutes) mins"
+    LocalizedDuration.string(duration, style: .abbreviated)
   }
 
   private func initializeDisplayedProgressIfNeeded() {
