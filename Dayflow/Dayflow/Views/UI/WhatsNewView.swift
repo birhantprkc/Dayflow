@@ -82,11 +82,11 @@ enum WhatsNewWeeklyFeedback: String, CaseIterable, Identifiable {
   var title: String {
     switch self {
     case .valuable:
-      return "It feels valuable"
+      return String(localized: "It feels valuable")
     case .usefulNeedsWork:
-      return "Useful, but needs work"
+      return String(localized: "Useful, but needs work")
     case .notUsefulYet:
-      return "Not useful yet"
+      return String(localized: "Not useful yet")
     }
   }
 }
@@ -103,10 +103,16 @@ enum WhatsNewConfiguration {
   static var configuredRelease: ReleaseNote? {
     ReleaseNote(
       version: targetVersion,
-      title: "A fresh look, light and dark + a new view for your agents",
+      title: String(localized: "A fresh look, light and dark + a new view for your agents"),
       highlights: [
-        "We’re giving Dayflow’s UI a light refresh, including a much-requested feature: dark mode! It follows your system preference, but you can also choose light or dark manually in Settings → Other.",
-        "The Agents tab now brings your Codex and Claude Code sessions into Dayflow, with a timeline, token usage, and estimated API costs.",
+        String(
+          localized:
+            "We’re giving Dayflow’s UI a light refresh, including a much-requested feature: dark mode! It follows your system preference, but you can also choose light or dark manually in Settings → Other."
+        ),
+        String(
+          localized:
+            "The Agents tab now brings your Codex and Claude Code sessions into Dayflow, with a timeline, token usage, and estimated API costs."
+        ),
       ],
       socialPreview: nil,
       previewIntro: nil,
@@ -114,9 +120,12 @@ enum WhatsNewConfiguration {
       betaSignup: nil,
       cta: nil,
       githubStar: ReleaseNoteGitHubStar(
-        title: "Enjoying Dayflow?",
+        title: String(localized: "Enjoying Dayflow?"),
         description:
-          "If Dayflow has been useful and you'd like to help more people find it, a star on GitHub goes a long way."
+          String(
+            localized:
+              "If Dayflow has been useful and you'd like to help more people find it, a star on GitHub goes a long way."
+          )
       ),
       showsWeeklyFeedbackSurvey: false
     )
@@ -399,7 +408,8 @@ struct WhatsNewView: View {
 
         WhatsNewSurveyTextEditor(
           text: $weeklyImprovementText,
-          placeholder: "New visualizations, data, comparisons, breakdowns, anything missing..."
+          placeholder: String(
+            localized: "New visualizations, data, comparisons, breakdowns, anything missing...")
         )
         .frame(minHeight: 78)
         .background(
@@ -427,9 +437,12 @@ struct WhatsNewView: View {
             HStack(spacing: 8) {
               Image(systemName: "paperplane.fill")
                 .font(.system(size: 12, weight: .semibold))
-              Text(isSubmittingWeeklyFeedback ? "Saving..." : "Send feedback")
-                .font(.custom("Figtree", size: 14))
-                .fontWeight(.semibold)
+              Text(
+                isSubmittingWeeklyFeedback
+                  ? String(localized: "Saving...") : String(localized: "Send feedback")
+              )
+              .font(.custom("Figtree", size: 14))
+              .fontWeight(.semibold)
             }
           },
           background: Color(red: 0.25, green: 0.17, blue: 0),
@@ -530,15 +543,15 @@ struct WhatsNewView: View {
 
         HStack(alignment: .top, spacing: 10) {
           agentsBetaTextField(
-            title: "Email",
-            placeholder: "you@company.com",
+            title: String(localized: "Email"),
+            placeholder: String(localized: "you@company.com"),
             text: $agentsBetaEmail,
             isRequired: true
           )
 
           agentsBetaTextField(
-            title: "Company",
-            placeholder: "Optional",
+            title: String(localized: "Company"),
+            placeholder: String(localized: "Optional"),
             text: $agentsBetaCompany,
             isRequired: false
           )
@@ -560,9 +573,12 @@ struct WhatsNewView: View {
                   .tint(.white)
               }
 
-              Text(isSubmittingAgentsBeta ? "Joining..." : "Join the beta")
-                .font(.custom("Figtree", size: 14))
-                .fontWeight(.semibold)
+              Text(
+                isSubmittingAgentsBeta
+                  ? String(localized: "Joining...") : String(localized: "Join the beta")
+              )
+              .font(.custom("Figtree", size: 14))
+              .fontWeight(.semibold)
             }
           },
           background: Color(red: 0.25, green: 0.17, blue: 0),
@@ -734,9 +750,12 @@ struct WhatsNewView: View {
               HStack(spacing: 10) {
                 Image(systemName: "star.fill")
                   .font(.system(size: 14, weight: .semibold))
-                Text(githubStarState == .starring ? "Starring..." : "Star on GitHub")
-                  .font(.custom("Figtree", size: 16))
-                  .fontWeight(.semibold)
+                Text(
+                  githubStarState == .starring
+                    ? String(localized: "Starring...") : String(localized: "Star on GitHub")
+                )
+                .font(.custom("Figtree", size: 16))
+                .fontWeight(.semibold)
               }
             },
             background: Color(red: 0.25, green: 0.17, blue: 0),
@@ -1106,7 +1125,7 @@ struct WhatsNewView: View {
       surveyErrorText = nil
       return true
     } catch {
-      surveyErrorText = "Could not submit. Please try again."
+      surveyErrorText = String(localized: "Could not submit. Please try again.")
       return false
     }
   }
@@ -1115,20 +1134,21 @@ struct WhatsNewView: View {
     agentsBetaErrorText = nil
 
     guard let selectedAgentsPerDay else {
-      agentsBetaErrorText = "Choose how many agents you launch per day."
+      agentsBetaErrorText = String(localized: "Choose how many agents you launch per day.")
       return
     }
 
     let email = agentsBetaEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     guard isLikelyValidEmail(email) else {
-      agentsBetaErrorText = "Enter a valid email address."
+      agentsBetaErrorText = String(localized: "Enter a valid email address.")
       return
     }
 
     let company = agentsBetaCompany.trimmingCharacters(in: .whitespacesAndNewlines)
     let contact = company.isEmpty ? email : "\(email) | \(company)"
     guard contact.count <= 200 else {
-      agentsBetaErrorText = "Email and company must be under 200 characters combined."
+      agentsBetaErrorText = String(
+        localized: "Email and company must be under 200 characters combined.")
       return
     }
 
@@ -1161,7 +1181,7 @@ struct WhatsNewView: View {
         agentsBetaCompany = ""
         agentsBetaErrorText = nil
       } catch {
-        agentsBetaErrorText = "Could not join the beta. Please try again."
+        agentsBetaErrorText = String(localized: "Could not join the beta. Please try again.")
       }
     }
   }
@@ -1181,7 +1201,7 @@ struct WhatsNewView: View {
   }
 
   private var currentProviderLabel: String {
-    (try? LLMProviderRoutingStore.load())?.primary.providerLabel ?? "unknown"
+    (try? LLMProviderRoutingStore.load())?.primary.providerLabel ?? String(localized: "unknown")
   }
 }
 
