@@ -65,7 +65,8 @@ enum WeeklySankeyModelFactory {
         icon: .asset("ChatGPTLogo")),
       WeeklySankeyAppInput(
         id: "figma", name: "Figma", minutes: 0, barColorHex: "FF7262",
-        icon: .monogram(text: "F", backgroundHex: "FF7262", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "F"), backgroundHex: "FF7262", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "browser", name: "Browser / Docs", minutes: 0, barColorHex: "BFB6AE",
         icon: .none),
@@ -77,10 +78,12 @@ enum WeeklySankeyModelFactory {
         icon: .none),
       WeeklySankeyAppInput(
         id: "x", name: "X", minutes: 0, barColorHex: "000000",
-        icon: .monogram(text: "X", backgroundHex: "000000", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "X"), backgroundHex: "000000", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "youtube", name: "YouTube", minutes: 0, barColorHex: "FF0000",
-        icon: .monogram(text: "Y", backgroundHex: "FF0000", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "Y"), backgroundHex: "FF0000", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "league", name: "League", minutes: 0, barColorHex: "7AA7FF",
         icon: .none),
@@ -120,7 +123,7 @@ enum WeeklySankeyModelFactory {
 
     return build(
       id: "dayflow-timeline-apr20-apr24",
-      seedLabel: "Timeline data",
+      seedLabel: String(localized: "Timeline data"),
       sourceName: "Apr 20-24",
       categories: categories,
       apps: apps,
@@ -164,7 +167,7 @@ enum WeeklySankeyModelFactory {
 
     return build(
       id: "figma-baseline",
-      seedLabel: "Figma baseline",
+      seedLabel: String(localized: "Figma baseline"),
       sourceName: "Weekly",
       categories: categoryTemplates,
       apps: apps,
@@ -249,7 +252,7 @@ enum WeeklySankeyModelFactory {
 
     return build(
       id: "random-\(seed)",
-      seedLabel: "Seed \(seed)",
+      seedLabel: String(localized: "Seed \(seed)"),
       sourceName: "Weekly",
       categories: categories,
       apps: apps,
@@ -625,19 +628,23 @@ enum WeeklySankeyModelFactory {
         icon: .none),
       WeeklySankeyAppInput(
         id: "youtube", name: "YouTube", minutes: 0, barColorHex: "FF0000",
-        icon: .monogram(text: "Y", backgroundHex: "FF0000", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "Y"), backgroundHex: "FF0000", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "claude", name: "Claude", minutes: 0, barColorHex: "D97757",
         icon: .asset("ClaudeLogo")),
       WeeklySankeyAppInput(
         id: "figma", name: "Figma", minutes: 0, barColorHex: "FF7262",
-        icon: .monogram(text: "F", backgroundHex: "FF7262", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "F"), backgroundHex: "FF7262", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "x", name: "X", minutes: 0, barColorHex: "000000",
-        icon: .monogram(text: "X", backgroundHex: "000000", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "X"), backgroundHex: "000000", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "medium", name: "Medium", minutes: 0, barColorHex: "000000",
-        icon: .monogram(text: "M", backgroundHex: "000000", foregroundHex: "FFFFFF")),
+        icon: .monogram(
+          text: String(localized: "M"), backgroundHex: "000000", foregroundHex: "FFFFFF")),
       WeeklySankeyAppInput(
         id: "other", name: "Other", minutes: 0, barColorHex: "D9D9D9",
         icon: .none),
