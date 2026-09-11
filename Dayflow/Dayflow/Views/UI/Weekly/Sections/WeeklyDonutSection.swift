@@ -219,24 +219,17 @@ private struct WeeklyDonutCenterContent: View {
         .font(.custom("Figtree-Bold", size: 8))
         .foregroundStyle(WeeklyPalette.mutedText)
 
+      // Plural-aware catalog keys, so Russian gets часа/часов and CJK a single form.
       VStack(spacing: 0) {
-        Text("\(totalHours) \(hourLabel)")
+        Text("\(totalHours) hours")
           .font(.custom("InstrumentSerif-Regular", size: 16))
           .foregroundStyle(WeeklyPalette.text)
 
-        Text("\(remainingMinutes) \(minuteLabel)")
+        Text("\(remainingMinutes) minutes")
           .font(.custom("InstrumentSerif-Regular", size: 16))
           .foregroundStyle(WeeklyPalette.text)
       }
     }
-  }
-
-  private var hourLabel: String {
-    totalHours == 1 ? "hour" : "hours"
-  }
-
-  private var minuteLabel: String {
-    remainingMinutes == 1 ? "minute" : "minutes"
   }
 }
 
@@ -247,9 +240,9 @@ private struct WeeklyDonutLegendRow: View {
   var percentInset: Double = 0
 
   private var percentageText: String {
-    guard totalMinutes > 0 else { return "0%" }
+    guard totalMinutes > 0 else { return String(localized: "0%") }
     let share = (Double(item.minutes) / Double(totalMinutes)) * 100
-    return "\(Int(share.rounded()))%"
+    return String(localized: "\(Int(share.rounded()))%")
   }
 
   var body: some View {
