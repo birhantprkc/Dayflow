@@ -487,7 +487,10 @@ extension MainView {
         }
       }
       .animation(.spring(response: 0.3, dampingFraction: 0.85), value: copyTimelineState)
-      .frame(width: stylePreviewAfter ? 122 : 104, height: stylePreviewAfter ? 26 : 23)
+      .fixedSize(horizontal: true, vertical: false)
+      .padding(.horizontal, 8)
+      .frame(minWidth: stylePreviewAfter ? 122 : 104)
+      .frame(height: stylePreviewAfter ? 26 : 23)
       .foregroundColor(textColor)
       .background(background)
       .background {
