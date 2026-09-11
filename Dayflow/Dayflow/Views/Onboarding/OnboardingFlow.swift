@@ -292,7 +292,7 @@ struct OnboardingFlow: View {
         routingSaveErrorMessage = nil
       }
     } message: {
-      Text(routingSaveErrorMessage ?? "Please try again.")
+      Text(routingSaveErrorMessage ?? String(localized: "Please try again."))
     }
   }
 
@@ -305,7 +305,8 @@ struct OnboardingFlow: View {
       return true
     } catch {
       if presentsError {
-        routingSaveErrorMessage = "Dayflow couldn't save this provider. Please try again."
+        routingSaveErrorMessage = String(
+          localized: "Dayflow couldn't save this provider. Please try again.")
       }
       AnalyticsService.shared.capture(
         "llm_provider_routing_save_failed",
@@ -870,17 +871,17 @@ enum DownloadReasonOption: CaseIterable, Identifiable, Hashable {
   var displayName: String {
     switch self {
     case .automaticLog:
-      return "To keep an automatic log of what I worked on"
+      return String(localized: "To keep an automatic log of what I worked on")
     case .proofOfWork:
-      return "To make my work more visible for standups, reviews, or promotions"
+      return String(localized: "To make my work more visible for standups, reviews, or promotions")
     case .cutDistractions:
-      return "To find and cut distractions"
+      return String(localized: "To find and cut distractions")
     case .productiveFocused:
-      return "To be more productive or focused"
+      return String(localized: "To be more productive or focused")
     case .openSourcePrivate:
-      return "I wanted a tracker that's open source and keeps my data private"
+      return String(localized: "I wanted a tracker that's open source and keeps my data private")
     case .other:
-      return "Other"
+      return String(localized: "Other")
     }
   }
 
@@ -939,7 +940,7 @@ struct OnboardingPrototypeReferralStep: View {
 
       VStack(spacing: 20) {
         ReferralSurveyView(
-          prompt: "Where did you first hear about Dayflow?",
+          prompt: String(localized: "Where did you first hear about Dayflow?"),
           showSubmitButton: false,
           selectedReferral: $selectedReferral,
           customReferral: $referralDetail
