@@ -112,7 +112,8 @@ extension MainView {
       TimelineFailureToastView(
         title: payload.title,
         message: payload.message,
-        actionTitle: payload.destination == .account ? "Open Account" : "Open Provider Settings",
+        actionTitle: payload.destination == .account
+          ? String(localized: "Open Account") : String(localized: "Open Provider Settings"),
         onOpenSettings: { handleTimelineFailureToastOpenSettings(payload) },
         onDismiss: { handleTimelineFailureToastDismiss(payload) }
       )
@@ -398,7 +399,8 @@ extension MainView {
     if showCategoryEditor {
       ColorOrganizerRoot(
         presentationStyle: .sheet,
-        onDismiss: { showCategoryEditor = false }, completionButtonTitle: "Done", showsTitles: true
+        onDismiss: { showCategoryEditor = false }, completionButtonTitle: String(localized: "Done"),
+        showsTitles: true
       )
       .environmentObject(categoryStore)
       // Removed .contentShape(Rectangle()) and .onTapGesture to allow keyboard input
