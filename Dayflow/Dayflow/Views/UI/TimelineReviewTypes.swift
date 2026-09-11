@@ -14,8 +14,7 @@ final class TimelineReviewTimeCache {
 
   private let formatter: DateFormatter = {
     let f = DateFormatter()
-    f.dateFormat = "h:mm a"
-    f.locale = Locale(identifier: "en_US_POSIX")
+    f.timeStyle = .short
     return f
   }()
 
@@ -36,8 +35,7 @@ final class TimelineReviewTimeCache {
 
 let cachedReviewTimeFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "h:mm a"
-  formatter.locale = Locale(identifier: "en_US_POSIX")
+  formatter.timeStyle = .short
   return formatter
 }()
 
@@ -52,9 +50,9 @@ enum TimelineReviewRating: String, CaseIterable, Identifiable {
 
   var title: String {
     switch self {
-    case .distracted: return "Distracted"
-    case .neutral: return "Neutral"
-    case .focused: return "Focused"
+    case .distracted: return String(localized: "Distracted")
+    case .neutral: return String(localized: "Neutral")
+    case .focused: return String(localized: "Focused")
     }
   }
 
