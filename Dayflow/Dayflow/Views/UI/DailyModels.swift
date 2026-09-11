@@ -5,19 +5,19 @@ import UserNotifications
 
 let dailyTodayDisplayFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "'Today,' MMMM d"
+  formatter.setLocalizedDateFormatFromTemplate("MMMMd")
   return formatter
 }()
 
 let dailyOtherDayDisplayFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "EEEE, MMMM d"
+  formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
   return formatter
 }()
 
 let dailyStandupSectionDayFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "EEE, MMM d"
+  formatter.setLocalizedDateFormatFromTemplate("EEEMMMd")
   return formatter
 }()
 
@@ -125,11 +125,17 @@ struct DailyWorkflowStatChip: Identifiable, Sendable {
   let value: String
 
   static let placeholder: [DailyWorkflowStatChip] = [
-    DailyWorkflowStatChip(id: "context-switched", title: "Context switched", value: "0 times"),
-    DailyWorkflowStatChip(id: "interrupted", title: "Interrupted", value: "0 times"),
-    DailyWorkflowStatChip(id: "focused-for", title: "Focused for", value: "0m"),
-    DailyWorkflowStatChip(id: "distracted-for", title: "Distracted for", value: "0m"),
-    DailyWorkflowStatChip(id: "transitioning-time", title: "Transitioning time", value: "0m"),
+    DailyWorkflowStatChip(
+      id: "context-switched", title: String(localized: "Context switched"),
+      value: String(localized: "0 times")),
+    DailyWorkflowStatChip(
+      id: "interrupted", title: String(localized: "Interrupted"),
+      value: String(localized: "0 times")),
+    DailyWorkflowStatChip(id: "focused-for", title: String(localized: "Focused for"), value: "0m"),
+    DailyWorkflowStatChip(
+      id: "distracted-for", title: String(localized: "Distracted for"), value: "0m"),
+    DailyWorkflowStatChip(
+      id: "transitioning-time", title: String(localized: "Transitioning time"), value: "0m"),
   ]
 }
 struct DailyWorkflowTimelineWindow: Sendable {
