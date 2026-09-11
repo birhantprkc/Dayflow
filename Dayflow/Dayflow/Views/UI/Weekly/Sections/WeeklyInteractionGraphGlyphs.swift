@@ -63,7 +63,7 @@ struct WeeklyInteractionGraphGlyphView: View {
         WeeklyInteractionYouTubeGlyph()
       case .x:
         WeeklyInteractionMonogramGlyph(
-          text: "X",
+          text: String(localized: "X"),
           background: .black,
           foreground: .white,
           cornerRadius: diameter * 0.11,
@@ -77,7 +77,7 @@ struct WeeklyInteractionGraphGlyphView: View {
         WeeklyInteractionZoomGlyph(fontSize: diameter * 0.24)
       case .reddit:
         WeeklyInteractionMonogramGlyph(
-          text: "r",
+          text: String(localized: "r"),
           background: Color(hex: "FC7645"),
           foreground: .white,
           cornerRadius: diameter * 0.5,
@@ -85,7 +85,7 @@ struct WeeklyInteractionGraphGlyphView: View {
         )
       case .linear:
         WeeklyInteractionMonogramGlyph(
-          text: "L",
+          text: String(localized: "L"),
           background: Color(hex: "2B2724"),
           foreground: .white,
           cornerRadius: diameter * 0.12,
@@ -93,7 +93,7 @@ struct WeeklyInteractionGraphGlyphView: View {
         )
       case .framer:
         WeeklyInteractionMonogramGlyph(
-          text: "F",
+          text: String(localized: "F"),
           background: .black,
           foreground: .white,
           cornerRadius: diameter * 0.12,
@@ -383,9 +383,9 @@ struct WeeklyInteractionBarsGlyph: View {
 struct WeeklyInteractionGraphLegend: View {
   var body: some View {
     HStack(spacing: 24) {
-      legendItem(for: .work, title: "Work")
-      legendItem(for: .personal, title: "Personal")
-      legendItem(for: .distraction, title: "Distraction")
+      legendItem(for: .work, title: String(localized: "Work"))
+      legendItem(for: .personal, title: String(localized: "Personal"))
+      legendItem(for: .distraction, title: String(localized: "Distraction"))
     }
   }
 
