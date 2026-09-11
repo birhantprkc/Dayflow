@@ -234,7 +234,7 @@ private struct ShimmerOverlay: View {
     ToolCallBubble(
       message: ChatMessage(
         role: .toolCall,
-        content: "Fetching Tuesday's timeline...",
+        content: String(localized: "Fetching Tuesday's timeline..."),
         toolStatus: .running
       )
     )
@@ -242,16 +242,16 @@ private struct ShimmerOverlay: View {
     ToolCallBubble(
       message: ChatMessage(
         role: .toolCall,
-        content: "Fetching timeline...",
-        toolStatus: .completed(summary: "Found 8 activities for Jan 7th")
+        content: String(localized: "Fetching timeline..."),
+        toolStatus: .completed(summary: String(localized: "Found 8 activities for Jan 7th"))
       )
     )
 
     ToolCallBubble(
       message: ChatMessage(
         role: .toolCall,
-        content: "Fetching timeline...",
-        toolStatus: .failed(error: "No data found for this date")
+        content: String(localized: "Fetching timeline..."),
+        toolStatus: .failed(error: String(localized: "No data found for this date"))
       )
     )
   }
