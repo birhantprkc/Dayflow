@@ -13,21 +13,23 @@ enum ClaudeOutputValidationError: Error, Equatable, LocalizedError {
   var errorDescription: String? {
     switch self {
     case .invalidConfiguration:
-      return "Card duration limits and evidence tolerance are invalid."
+      return String(localized: "Card duration limits and evidence tolerance are invalid.")
     case .emptyCards:
-      return "No activity cards were returned."
+      return String(localized: "No activity cards were returned.")
     case .invalidTimestamp(let timestamp):
-      return "Invalid timestamp: \(timestamp)"
+      return String(localized: "Invalid timestamp: \(timestamp)")
     case .invalidCardDuration(let title, let seconds):
-      return "Card '\(title)' has an invalid duration of \(seconds) seconds."
+      return String(localized: "Card '\(title)' has an invalid duration of \(seconds) seconds.")
     case .overlappingCards(let previous, let current):
-      return "Activity cards overlap: '\(previous)' and '\(current)'."
+      return String(localized: "Activity cards overlap: '\(previous)' and '\(current)'.")
     case .missingEvidenceCoverage:
-      return "Activity cards do not cover all supplied observations and previous cards."
+      return String(
+        localized: "Activity cards do not cover all supplied observations and previous cards.")
     case .cardCoversEvidenceGap(let title):
-      return "Card '\(title)' covers a genuine gap in the source timeline."
+      return String(localized: "Card '\(title)' covers a genuine gap in the source timeline.")
     case .outputOutsideEvidence:
-      return "Activity cards contain material output outside the supplied source timeline."
+      return String(
+        localized: "Activity cards contain material output outside the supplied source timeline.")
     }
   }
 }
