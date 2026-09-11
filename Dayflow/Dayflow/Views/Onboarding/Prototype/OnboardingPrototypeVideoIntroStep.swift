@@ -59,7 +59,9 @@ struct OnboardingPrototypeVideoIntroStep: View {
     }
     .buttonStyle(.plain)
     .pointingHandCursor()
-    .accessibilityLabel(isDoubleSpeed ? "Play at normal speed" : "Play at double speed")
+    .accessibilityLabel(
+      isDoubleSpeed
+        ? String(localized: "Play at normal speed") : String(localized: "Play at double speed"))
   }
 
   private var currentRate: Float {
