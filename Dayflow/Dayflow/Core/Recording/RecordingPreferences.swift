@@ -47,8 +47,8 @@ enum ScreenshotConfig {
 
   static func label(forInterval interval: TimeInterval) -> String {
     let seconds = Int(interval)
-    if seconds >= 60 { return "Every \(seconds / 60) min" }
-    return "Every \(seconds) sec"
+    if seconds >= 60 { return String(localized: "Every \(seconds / 60) min") }
+    return String(localized: "Every \(seconds) sec")
   }
 
   static func label(forHeight height: Int) -> String {
