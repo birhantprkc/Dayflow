@@ -58,15 +58,15 @@ struct WeeklySankeySection: View {
 
       Spacer(minLength: 12)
 
-      controlButton("Timeline data", dataset: .timeline) {
+      controlButton(String(localized: "Timeline data"), dataset: .timeline) {
         dataset = .timeline
       }
 
-      controlButton("Figma baseline", dataset: .figma) {
+      controlButton(String(localized: "Figma baseline"), dataset: .figma) {
         dataset = .figma
       }
 
-      controlButton("Random stress", dataset: .random) {
+      controlButton(String(localized: "Random stress"), dataset: .random) {
         dataset = .random
         randomSeed = nextRandomSeed()
       }
