@@ -26,11 +26,11 @@ enum AgentClient: String, CaseIterable, Identifiable {
 
   var displayName: String {
     switch self {
-    case .codex: return "Codex"
-    case .claudeCode: return "Claude Code"
-    case .claudeDesktop: return "Claude Desktop"
-    case .cursor: return "Cursor"
-    case .vsCode: return "VS Code"
+    case .codex: return String(localized: "Codex")
+    case .claudeCode: return String(localized: "Claude Code")
+    case .claudeDesktop: return String(localized: "Claude Desktop")
+    case .cursor: return String(localized: "Cursor")
+    case .vsCode: return String(localized: "VS Code")
     }
   }
 }
