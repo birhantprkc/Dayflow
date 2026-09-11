@@ -11,7 +11,8 @@ import SwiftUI
 
 private let videoPlayerTimeFormatter: DateFormatter = {
   let formatter = DateFormatter()
-  formatter.dateFormat = "h:mm a"
+  formatter.timeStyle = .short
+  formatter.dateStyle = .none
   return formatter
 }()
 
@@ -567,26 +568,29 @@ class VideoPlayerViewModel: ObservableObject {
     // Dummy data for now
     segments = [
       VideoSegment(
-        title: "Brainstorming with Chat GPT", startTime: 0, endTime: 420, color: .orange,
+        title: String(localized: "Brainstorming with Chat GPT"), startTime: 0, endTime: 420,
+        color: .orange,
         activityType: .brainstorming),
       VideoSegment(
-        title: "Browsing TripAdvisor", startTime: 420, endTime: 660, color: .red,
+        title: String(localized: "Browsing TripAdvisor"), startTime: 420, endTime: 660, color: .red,
         activityType: .browsing),
       VideoSegment(
-        title: "Comparing flights", startTime: 660, endTime: 780, color: .blue,
+        title: String(localized: "Comparing flights"), startTime: 660, endTime: 780, color: .blue,
         activityType: .other("travel")),
       VideoSegment(
-        title: "Break", startTime: 780, endTime: 840, color: .yellow, activityType: .breaks),
+        title: String(localized: "Break"), startTime: 780, endTime: 840, color: .yellow,
+        activityType: .breaks),
       VideoSegment(
-        title: "Email responses", startTime: 840, endTime: 1020, color: .blue, activityType: .email),
+        title: String(localized: "Email responses"), startTime: 840, endTime: 1020, color: .blue,
+        activityType: .email),
       VideoSegment(
-        title: "Coding session", startTime: 1020, endTime: 1680, color: .orange,
+        title: String(localized: "Coding session"), startTime: 1020, endTime: 1680, color: .orange,
         activityType: .coding),
       VideoSegment(
-        title: "Research", startTime: 1680, endTime: 1980, color: .orange,
+        title: String(localized: "Research"), startTime: 1680, endTime: 1980, color: .orange,
         activityType: .brainstorming),
       VideoSegment(
-        title: "Planning", startTime: 1980, endTime: duration, color: .blue,
+        title: String(localized: "Planning"), startTime: 1980, endTime: duration, color: .blue,
         activityType: .other("planning")),
     ]
   }
