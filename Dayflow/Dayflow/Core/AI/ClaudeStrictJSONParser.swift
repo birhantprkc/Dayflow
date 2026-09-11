@@ -14,24 +14,28 @@ enum ClaudeStrictJSONParserError: Error, Equatable, LocalizedError {
   var errorDescription: String? {
     switch self {
     case .noActivityCards:
-      return "Claude returned an empty activity-card list."
+      return String(localized: "Claude returned an empty activity-card list.")
     case .noSegments:
-      return "Claude returned an empty transcription segment list."
+      return String(localized: "Claude returned an empty transcription segment list.")
     case .invalidActivityCard(let index, let field):
-      return "Claude activity card \(index + 1) is missing or has an invalid \(field)."
+      return String(
+        localized: "Claude activity card \(index + 1) is missing or has an invalid \(field).")
     case .duplicateJSONKey(let key):
-      return "Claude returned a JSON object with the duplicate key '\(key)'."
+      return String(localized: "Claude returned a JSON object with the duplicate key '\(key)'.")
     case .conflictingActivityCardTimestampAliases(let index, let first, let second):
       return
-        "Claude activity card \(index + 1) contains both '\(first)' and '\(second)'. Return exactly one timestamp field."
+        String(
+          localized:
+            "Claude activity card \(index + 1) contains both '\(first)' and '\(second)'. Return exactly one timestamp field."
+        )
     case .ambiguousActivityCardPayloads:
-      return "Claude returned more than one activity-card JSON payload."
+      return String(localized: "Claude returned more than one activity-card JSON payload.")
     case .ambiguousSegmentPayloads:
-      return "Claude returned more than one transcription JSON payload."
+      return String(localized: "Claude returned more than one transcription JSON payload.")
     case .undecodableActivityCards:
-      return "Failed to decode Claude activity-card JSON."
+      return String(localized: "Failed to decode Claude activity-card JSON.")
     case .undecodableSegments:
-      return "Failed to decode Claude transcription JSON."
+      return String(localized: "Failed to decode Claude transcription JSON.")
     }
   }
 }
