@@ -9,9 +9,9 @@ enum LocalEngine: String, CaseIterable, Identifiable, Codable {
 
   var displayName: String {
     switch self {
-    case .ollama: return "Ollama"
-    case .lmstudio: return "LM Studio"
-    case .custom: return "Custom"
+    case .ollama: return String(localized: "Ollama")
+    case .lmstudio: return String(localized: "LM Studio")
+    case .custom: return String(localized: "Custom")
     }
   }
 
