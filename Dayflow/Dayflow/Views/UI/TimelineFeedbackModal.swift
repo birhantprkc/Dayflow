@@ -26,33 +26,46 @@ struct FeedbackModalContent {
   let illustrationAccessibilityLabel: String?
 
   static let timeline = FeedbackModalContent(
-    accessibilityLabel: "Timeline feedback form",
-    accessibilityHint: "Share more context after rating this summary.",
-    formTitle: "Thank you!",
-    formSubtitle: "Tell us more about your feedback",
+    accessibilityLabel: String(localized: "Timeline feedback form"),
+    accessibilityHint: String(localized: "Share more context after rating this summary."),
+    formTitle: String(localized: "Thank you!"),
+    formSubtitle: String(localized: "Tell us more about your feedback"),
     placeholder:
-      "I don't have access to your timeline (privacy first!), so your feedback here helps improve the quality of Dayflow for everyone.",
-    shareLogsLabel: "I'd like to share this log to the developer to help improve the product.",
-    submitButtonTitle: "Submit",
-    thanksTitle: "Thank you for your feedback!",
+      String(
+        localized:
+          "I don't have access to your timeline (privacy first!), so your feedback here helps improve the quality of Dayflow for everyone."
+      ),
+    shareLogsLabel: String(
+      localized: "I'd like to share this log to the developer to help improve the product."),
+    submitButtonTitle: String(localized: "Submit"),
+    thanksTitle: String(localized: "Thank you for your feedback!"),
     thanksBody:
-      "If you find that your activities are summarized inaccurately, try editing the descriptions of your categories to improve Dayflow's accuracy.",
+      String(
+        localized:
+          "If you find that your activities are summarized inaccurately, try editing the descriptions of your categories to improve Dayflow's accuracy."
+      ),
     illustrationImageName: "CategoryEditUI",
-    illustrationAccessibilityLabel: "Illustration showing how to edit categories"
+    illustrationAccessibilityLabel: String(localized: "Illustration showing how to edit categories")
   )
 
   static let chat = FeedbackModalContent(
-    accessibilityLabel: "Chat feedback form",
-    accessibilityHint: "Share more context after rating this chat answer.",
-    formTitle: "Thanks for the report",
-    formSubtitle: "Tell us what went wrong",
+    accessibilityLabel: String(localized: "Chat feedback form"),
+    accessibilityHint: String(localized: "Share more context after rating this chat answer."),
+    formTitle: String(localized: "Thanks for the report"),
+    formSubtitle: String(localized: "Tell us what went wrong"),
     placeholder:
-      "What was wrong with this answer? If you're comfortable, include what you expected instead.",
+      String(
+        localized:
+          "What was wrong with this answer? If you're comfortable, include what you expected instead."
+      ),
     shareLogsLabel:
-      "I'd like to share this answer and related logs with the developer to help improve the product.",
-    submitButtonTitle: "Submit",
-    thanksTitle: "Thank you for your feedback!",
-    thanksBody: "Your note will help improve future Dashboard answers.",
+      String(
+        localized:
+          "I'd like to share this answer and related logs with the developer to help improve the product."
+      ),
+    submitButtonTitle: String(localized: "Submit"),
+    thanksTitle: String(localized: "Thank you for your feedback!"),
+    thanksBody: String(localized: "Your note will help improve future Dashboard answers."),
     illustrationImageName: nil,
     illustrationAccessibilityLabel: nil
   )
@@ -281,7 +294,7 @@ extension TimelineFeedbackModal {
           .stroke(Color.white.opacity(0.7), lineWidth: 0.5)
       )
       .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
-      .accessibilityLabel(Text(accessibilityLabel ?? "Feedback illustration"))
+      .accessibilityLabel(Text(accessibilityLabel ?? String(localized: "Feedback illustration")))
   }
 }
 
