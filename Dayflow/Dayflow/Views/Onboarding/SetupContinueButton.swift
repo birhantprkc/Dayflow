@@ -16,7 +16,10 @@ struct SetupContinueButton: View {
   @State private var isPressed = false
   @State private var isHovered = false
 
-  init(title: String = "Continue", isEnabled: Bool = true, action: @escaping () -> Void) {
+  init(
+    title: String = String(localized: "Continue"), isEnabled: Bool = true,
+    action: @escaping () -> Void
+  ) {
     self.title = title
     self.isEnabled = isEnabled
     self.action = action
