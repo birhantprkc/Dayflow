@@ -42,15 +42,15 @@ final class GeminiAPIHelper {
     var errorDescription: String? {
       switch self {
       case .invalidAPIKey:
-        return "Invalid or missing API key"
+        return String(localized: "Invalid or missing API key")
       case .rateLimited(let message, _):
         return message
       case .apiError(let message):
         return message
       case .networkError(let message):
-        return "Network error: \(message)"
+        return String(localized: "Network error: \(message)")
       case .invalidResponse:
-        return "Invalid response from server"
+        return String(localized: "Invalid response from server")
       }
     }
   }
