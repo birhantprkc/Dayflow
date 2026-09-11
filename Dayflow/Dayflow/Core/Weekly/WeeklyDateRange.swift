@@ -4,15 +4,10 @@ struct WeeklyDateRange: Equatable, Sendable {
   let weekStart: Date
   let weekEnd: Date
 
-  private static let titleStartFormatter: DateFormatter = {
+  /// Weekday, month and day in the current locale's order (e.g. "Monday, September 8" or "8. September, Montag").
+  private static let titleDayFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateFormat = "EEEE, MMMM d"
-    return formatter
-  }()
-
-  private static let titleEndFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "EEEE, MMMM d"
+    formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
     return formatter
   }()
 
@@ -34,9 +29,9 @@ struct WeeklyDateRange: Equatable, Sendable {
 
   var title: String {
     let displayWeekEnd = Self.calendar.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart
-    let startText = Self.titleStartFormatter.string(from: weekStart)
-    let endText = Self.titleEndFormatter.string(from: displayWeekEnd)
-    return "\(startText) - \(endText)"
+    let startText = Self.titleDayFormatter.string(from: weekStart)
+    let endText = Self.titleDayFormatter.string(from: displayWeekEnd)
+    return String(localized: "\(startText) - \(endText)")
   }
 
   private static let calendar: Calendar = {
