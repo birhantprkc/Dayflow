@@ -127,7 +127,7 @@ struct AgentsBriefingView: View {
     DayflowSurfaceButton(
       action: onNext,
       content: {
-        Text(isLastWorkstream ? "Done" : "Next")
+        Text(isLastWorkstream ? String(localized: "Done") : String(localized: "Next"))
           .font(.custom("Figtree", size: 13))
           .fontWeight(.semibold)
       },
