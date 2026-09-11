@@ -160,15 +160,15 @@ struct WeeklyTreemapChange {
   }
 
   static func positive(_ minutes: Int) -> WeeklyTreemapChange {
-    WeeklyTreemapChange(text: "+ \(minutes)m", kind: .positive)
+    WeeklyTreemapChange(text: String(localized: "+ \(minutes)m"), kind: .positive)
   }
 
   static func negative(_ minutes: Int) -> WeeklyTreemapChange {
-    WeeklyTreemapChange(text: "- \(minutes)m", kind: .negative)
+    WeeklyTreemapChange(text: String(localized: "- \(minutes)m"), kind: .negative)
   }
 
   static func neutral(_ minutes: Int) -> WeeklyTreemapChange {
-    WeeklyTreemapChange(text: "\(minutes)m", kind: .neutral)
+    WeeklyTreemapChange(text: String(localized: "\(minutes)m"), kind: .neutral)
   }
 }
 
